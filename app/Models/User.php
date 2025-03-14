@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\HasApiTokens; // إضافة الـ HasApiTokens
 use Illuminate\Foundation\Auth\User as Authenticatable;
+
 
 class User extends Authenticatable
 {
-    use SoftDeletes, HasApiTokens, HasFactory, Notifiable; // إضافة الـ HasApiTokens
+    use HasApiTokens, SoftDeletes, HasFactory, Notifiable;
 
     protected $fillable = [
         'first_name',
@@ -22,7 +23,10 @@ class User extends Authenticatable
         'address',
         'social_id',
         'social_type',
-        'phone'
+        'phone',
+        'register_otp',
+        'reset_otp',
+        'is_verified'
     ];
     protected $hidden = [
         'password',
@@ -33,13 +37,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // دالة لإنشاء علاقة بين المستخدم والطلبات
+
     public function orders()
     {
         return $this->hasMany(Order::class);
     }
 
-    // تعيين كلمة السر وتشفيرها
     // protected function setPasswordAttribute($value)
     // {
     //     $this->attributes['password'] = Hash::make($value);
