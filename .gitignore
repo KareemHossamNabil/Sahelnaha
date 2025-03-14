@@ -1,8 +1,5 @@
 /.phpunit.cache
 /node_modules
-/public/build
-/public/hot
-/storage/pail
 /vendor
 .env
 .env.backup

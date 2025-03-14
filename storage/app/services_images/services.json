@@ -1,0 +1,287 @@
+{
+    "سباكة":
+    [
+        {
+            "Image":"plumping1.png"
+        },
+        {
+            "Image":"plumping2.png"
+        },
+        {
+            "Image":"plumping3.png"
+        }
+    ],
+
+    "كهرباء":
+    [
+        {
+            "Image":"electric1.png"
+        },
+        {
+            "Image":"electric2.png"
+        },
+        {
+            "Image":"electric3.png"
+        }
+    ],
+
+    "نظافة":
+    [
+        {
+            "Image":"cleaning1.png"
+        },
+        {
+            "Image":"cleaning2.png"
+        },
+        {
+            "Image":"cleaning3.png"
+        }
+    ],
+
+    "نقاشة":
+    [
+        {
+            "Image":"image1.png"
+        },
+        {
+            "Image":"image2.png"
+        },
+        {
+            "Image":"image3.png"
+        }
+    ],
+
+    "تكييف":
+    [
+        {
+            "Image":"conditioning1.png"
+        },
+        {
+            "Image":"conditioning2.png"
+        },
+        {
+            "Image":"conditioning3.png"
+        }
+    ],
+
+    "نجارة":
+    [
+        {
+            "Image":"Carpentry1.png"
+        },
+        {
+            "Image":"Carpentry2.png"
+        },
+        {
+            "Image":"Carpentry3.png"
+        }
+    ],
+    
+    "زراعة":
+    [
+        {
+            "Image":"agriculture1.png"
+        },
+        {
+            "Image":"agriculture2.png"
+        },
+        {
+            "Image":"agriculture3.png"
+        }
+    ],
+      
+    "تنجيد":
+    [
+        {
+            "Image":"unpholstering1.png"
+        },
+        {
+            "Image":"unpholstering2.png"
+        },
+        {
+             "Image":"unpholstering3.png"
+        }
+    ],
+
+    "مطابخ":
+    [
+        {
+            "Image":"kitchen1.png"
+        },
+        {
+            "Image":"kitchen2.png"
+        },
+        {
+             "Image":"kitchen3.png"
+        }
+    ],
+
+    "تلاجات":
+    [
+        {
+            "Image":"Refrigerator1.png"
+        },
+        {
+             "Image":"Refrigerator2.png"
+        },
+        {
+             "Image":"Refrigerator3.png"
+        }
+    ],
+
+    
+    "دش":
+    [
+        {
+            "Image":"Satellite1.png"
+        },
+        {
+            "Image":"Satellite2.png"
+        },
+        {
+            "Image":"Satellite3.png"
+        }
+    ],
+
+    "ستائر":
+    [
+        {
+            "Image":"Curtain1.png"
+        },
+        {
+            "Image":"Curtain2.png"
+        },
+        {
+            "Image":"Curtain3.png"
+        }
+    ],
+    
+    "سجاد":
+    [
+        {
+            "Image":"Carpet1.png"
+        },
+        {
+            "Image":"Carpet2.png"
+        },
+        {
+            "Image":"Carpet3.png"
+        }
+    ],
+
+    "سيراميك":
+    [
+        {
+            "Image":"Ceramics1.png"
+        },
+        {
+            "Image":"Ceramics2.png"
+        },
+        {
+            "Image":"Ceramics3.png"
+        }
+    ],
+
+    "صيانة ذكية":
+    [
+        {
+            "Image":"Maintenance1.png"
+        },
+        {
+            "Image":"Maintenance2.png"
+        },
+        {
+            "Image":"Maintenance3.png"
+        }
+    ],
+
+    "غسالات":
+    [
+        {
+            "Image":"Washer1.png"
+        },
+        {
+            "Image":"Washer2.png"
+        },
+        {
+            "Image":"Washer3.png"
+        }
+    ],
+    
+    "كاميرات":
+    [
+        {
+            "Image":"camera1.png"
+        },
+        {
+            "Image":"camera2.png"
+        },
+        {
+            "Image":"camera3.png"
+        }
+    ],
+    "مبيض محارة":
+    [
+        {
+            "Image":"bleach1.png"
+        },
+        {
+            "Image":"bleach2.png"
+        },
+        {
+            "Image":"bleach3.png"
+        }
+    ],
+    "مراتب وسراير":
+    [
+        {
+            "Image":"bed1.png"
+        },
+        {
+            "Image":"bed2.png"
+        },
+        {
+            "Image":"bed3.png"
+        }
+    ],
+
+    "مصاعد":
+    [
+        {
+            "Image":"elevator1.png"
+        },
+        {
+            "Image":"elevator2.png"
+        },
+        {
+            "Image":"elevator3.png"
+        }
+    ],
+
+    "مكافحة حشرات":
+    [
+        {
+            "Image":"Insects1.png"
+        },
+        {
+            "Image":"Insects2.png"
+        },
+        {
+            "Image":"Insects3.png"
+        }
+    ],
+
+    "نقل اثاث":
+    [
+        {
+            "Image":"furniture1.png"
+        },
+        {
+            "Image":"furniture2.png"
+        },
+        {
+            "Image":"furniture3.png"
+        }
+    ]
+
+}
