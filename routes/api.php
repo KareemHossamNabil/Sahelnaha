@@ -10,6 +10,8 @@ use App\Http\Controllers\UsersReviewController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\TashtibaController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\ProductController;
+
 
 
 // ✅ Routes غير محمية
@@ -50,10 +52,11 @@ Route::get('/offers', [OfferController::class, 'index']);
 Route::get('/offers/{id}', [OfferController::class, 'show']);
 
 
-
 Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
 Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
+// Products of the Market
+Route::apiResource('products', ProductController::class);
 
 
 Route::middleware('auth:sanctum')->group(function () {
