@@ -40,14 +40,14 @@ class ProductController extends Controller
 
         if ($products->isEmpty()) {
             return response()->json([
-                'status' => 'error',
+                'status' => 404,
                 'msg'    => 'No products found in this category',
                 'data'   => [],
             ], 404);
         }
 
         return response()->json([
-            'status' => 'success',
+            'status' => 200,
             'msg'    => 'Products retrieved successfully',
             'data'   => ProductResource::collection($products),
         ]);
