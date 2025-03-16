@@ -8,6 +8,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\UsersReviewController;
 use App\Http\Controllers\OfferController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TashtibaController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ProductController;
@@ -59,6 +60,8 @@ Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProv
 Route::apiResource('products', ProductController::class);
 Route::get('/products/category/{category}', [ProductController::class, 'filterByCategory']);
 
+// انشاء الطلب
+Route::middleware('auth:sanctum')->post('/orders', [OrderController::class, 'store']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
