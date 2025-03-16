@@ -23,7 +23,7 @@ class OrderController extends Controller
             'payment_method' => 'required|string|in:MasterCard,كاش',
         ]);
 
-        // تحديد المستخدم الحالي
+
         $validated['user_id'] = Auth::id();
 
         // معالجة الصورة (إذا تم إرسالها)
