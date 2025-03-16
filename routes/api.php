@@ -57,6 +57,8 @@ Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProv
 
 // Products of the Market
 Route::apiResource('products', ProductController::class);
+Route::get('/products/category/{category}', [ProductController::class, 'filterByCategory']);
+
 
 
 Route::middleware('auth:sanctum')->group(function () {
