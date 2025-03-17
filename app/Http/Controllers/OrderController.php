@@ -24,7 +24,7 @@ class OrderController extends Controller
         ]);
 
 
-        $validated['user_id'] = Auth::id();
+        // $validated['user_id'] = Auth::id();
 
         // معالجة الصورة (إذا تم إرسالها)
         if ($request->has('image')) {
