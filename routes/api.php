@@ -12,6 +12,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TashtibaController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\ReviewController;
 
 
 
@@ -57,11 +59,33 @@ Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirectTo
 Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 // Products of the Market
-Route::apiResource('products', ProductController::class);
+// Route::apiResource('products', ProductController::class);
+
+
+// Retrived All Products
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/products/category/{category}', [ProductController::class, 'filterByCategory']);
+
+// Add Rate and Review for product
+Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
 
 // انشاء الطلب
 Route::post('/orders', [OrderController::class, 'store']);
+
+
+// cart routes - need Authentication
+Route::get('/cart', [CartController::class, 'index']);
+Route::post('/cart', [CartController::class, 'store']);
+Route::put('/cart/{id}', [CartController::class, 'update']);
+Route::delete('/cart/{id}', [CartController::class, 'destroy']);
+Route::delete('/cart', [CartController::class, 'clearCart']);
+
+
+
+
+
+
 
 
 Route::middleware('auth:sanctum')->group(function () {

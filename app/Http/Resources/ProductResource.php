@@ -13,10 +13,18 @@ class ProductResource extends JsonResource
             'id'          => $this->id,
             'name'        => $this->name,
             'price'       => $this->price,
+            'rating'      => $this->rating,
             'discount'    => $this->discount,
             'category'    => $this->category,
             'description' => $this->description,
             'image_url'   => $this->image ? asset('storage/' . $this->image) : null,
+            'reviews'     => $this->reviews->map(function ($review) {
+                return [
+                    'user_name' => $review->user_name,
+                    'rating'  => $review->rating,
+                    'comment'  => $review->comment
+                ];
+            }),
             'created_at'  => $this->created_at,
             'updated_at'  => $this->updated_at,
         ];

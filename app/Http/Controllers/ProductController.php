@@ -13,7 +13,8 @@ class ProductController extends Controller
     //  Retrived All Products
     public function index()
     {
-        $products = Product::all();
+        $products = Product::with('reviews')->get();
+
         return response()->json([
             'status' => 200,
             'msg'    => 'Products retrieved successfully',
@@ -24,7 +25,14 @@ class ProductController extends Controller
     //  by ID
     public function show($id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with('reviews')->find($id);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 404,
+                'msg' => 'Product not found'
+            ], 404);
+        }
         return response()->json([
             'status' => 200,
             'msg'    => 'Product retrieved successfully',
@@ -36,8 +44,10 @@ class ProductController extends Controller
     // Filteration By Category
     public function filterByCategory($category)
     {
-        $products = Product::where('category', $category)->get();
+        // جلب المنتجات بناءً على الفئة مع التقييمات
+        $products = Product::with('reviews')->where('category', $category)->get();
 
+        // التحقق من وجود منتجات
         if ($products->isEmpty()) {
             return response()->json([
                 'status' => 404,
@@ -46,6 +56,7 @@ class ProductController extends Controller
             ], 404);
         }
 
+        // إرجاع المنتجات مع التقييمات
         return response()->json([
             'status' => 200,
             'msg'    => 'Products retrieved successfully',
