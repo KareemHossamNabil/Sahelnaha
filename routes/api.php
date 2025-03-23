@@ -14,6 +14,8 @@ use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\CheckoutController;
+
 
 
 
@@ -73,17 +75,22 @@ Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
 // انشاء الطلب
 Route::post('/orders', [OrderController::class, 'store']);
 
-
-// cart routes - need Authentication
-Route::get('/cart', [CartController::class, 'index']);
-Route::post('/cart', [CartController::class, 'store']);
-Route::put('/cart/{id}', [CartController::class, 'update']);
-Route::delete('/cart/{id}', [CartController::class, 'destroy']);
-Route::delete('/cart', [CartController::class, 'clearCart']);
-
+// Cart Routes
+Route::post('/cart/add/{productId}', [CartController::class, 'addToCart']);
+Route::get('/cart', [CartController::class, 'viewCart']);
+Route::delete('/cart/remove/{productId}', [CartController::class, 'removeFromCart']);
+Route::post('/cart/update/{productId}', [CartController::class, 'updateQuantity']);
+Route::delete('/cart/clear', [CartController::class, 'clearCart']);
 
 
+Route::prefix('checkout')->group(function () {
+    Route::get('/', [CheckoutController::class, 'showCheckout']);
+    Route::post('/process', [CheckoutController::class, 'processPayment']);
+});
 
+Route::get('/init-session', function () {
+    return response()->json(['message' => 'API route working']);
+});
 
 
 

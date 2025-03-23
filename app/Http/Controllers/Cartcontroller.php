@@ -3,80 +3,117 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\CartItem;
 use App\Models\Product;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Cache;
 
 class CartController extends Controller
 {
-    // ✅ استرجاع جميع العناصر في السلة
-    public function index()
+    protected function calculateTotal($items)
     {
-        $cartItems = CartItem::where('user_id', Auth::id())
-            ->with('product') // جلب بيانات المنتج
-            ->get();
-
-        return response()->json($cartItems);
+        return collect($items)->sum(function ($item) {
+            $priceAfterDiscount = $item['price'] * (1 - $item['discount'] / 100);
+            return $priceAfterDiscount * $item['quantity'];
+        });
     }
 
-    // ✅ إضافة منتج للسلة
-    public function store(Request $request)
+    public function addToCart(Request $request, $productId)
     {
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1'
+        $product = Product::findOrFail($productId);
+        $cart = Cache::get('cart', []);
+
+        if (isset($cart[$productId])) {
+            $cart[$productId]['quantity']++;
+        } else {
+            $cart[$productId] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'rating' => $product->rating,
+                'discount' => $product->discount,
+                'category' => $product->category,
+                'description' => $product->description,
+                'image_url' => $product->image_url,
+                'reviews' => $product->reviews,
+                'created_at' => $product->created_at,
+                'updated_at' => $product->updated_at,
+                'quantity' => 1,
+            ];
+        }
+
+        Cache::put('cart', $cart, now()->addHours(72));
+        $total = $this->calculateTotal($cart);
+
+        return response()->json([
+            'status' => 200,
+            'msg' => 'Product added to cart successfully',
+            'cart' => $cart,
+            'total' => $total
         ]);
-
-        $cartItem = CartItem::updateOrCreate(
-            [
-                'user_id' => Auth::id(),
-                'product_id' => $request->product_id,
-            ],
-            [
-                'quantity' => DB::raw("quantity + {$request->quantity}")
-
-            ]
-        );
-
-        return response()->json(['message' => 'تمت إضافة المنتج إلى السلة بنجاح', 'cart_item' => $cartItem], 201);
     }
 
-    // ✅ تحديث الكمية
-    public function update(Request $request, $id)
+    public function viewCart()
     {
-        $request->validate(['quantity' => 'required|integer|min:1']);
+        $cart = Cache::get('cart', []);
+        $total = $this->calculateTotal($cart);
 
-        $cartItem = CartItem::where('id', $id)->where('user_id', Auth::id())->first();
+        return response()->json([
+            'status' => 200,
+            'msg' => 'Cart retrieved successfully',
+            'cart' => $cart,
+            'total' => $total
+        ]);
+    }
+    public function removeFromCart($productId)
+    {
+        $cart = Cache::get('cart', []);
 
-        if (!$cartItem) {
-            return response()->json(['message' => 'العنصر غير موجود في السلة'], 404);
+        if (isset($cart[$productId])) {
+            if ($cart[$productId]['quantity'] > 1) {
+
+                $cart[$productId]['quantity']--;
+            } else {
+
+                unset($cart[$productId]);
+            }
+
+
+            if (empty($cart)) {
+                Cache::forget('cart');
+                return response()->json([
+                    'status' => 200,
+                    'msg' => 'Cart is now empty',
+                    'cart' => [],
+                    'total' => 0
+                ]);
+            }
+
+            Cache::put('cart', $cart, now()->addHours(2));
+            $total = $this->calculateTotal($cart);
+
+            return response()->json([
+                'status' => 200,
+                'msg' => 'Product updated in cart',
+                'cart' => $cart,
+                'total' => $total
+            ]);
         }
 
-        $cartItem->update(['quantity' => $request->quantity]);
-
-        return response()->json(['message' => 'تم تحديث الكمية بنجاح', 'cart_item' => $cartItem]);
+        return response()->json([
+            'status' => 404,
+            'msg' => 'Product not found in cart'
+        ], 404);
     }
 
-    // ✅ حذف منتج من السلة
-    public function destroy($id)
-    {
-        $cartItem = CartItem::where('id', $id)->where('user_id', Auth::id())->first();
 
-        if (!$cartItem) {
-            return response()->json(['message' => 'العنصر غير موجود في السلة'], 404);
-        }
-
-        $cartItem->delete();
-
-        return response()->json(['message' => 'تم حذف العنصر من السلة بنجاح']);
-    }
-
-    // ✅ إفراغ السلة بالكامل
     public function clearCart()
     {
-        CartItem::where('user_id', Auth::id())->delete();
-        return response()->json(['message' => 'تم إفراغ السلة بنجاح']);
+        Cache::forget('cart');
+
+        return response()->json([
+            'status' => 200,
+            'msg' => 'Cart cleared successfully',
+            'cart' => [],
+            'total' => 0
+        ]);
     }
 }

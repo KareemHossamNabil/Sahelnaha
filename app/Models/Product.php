@@ -22,4 +22,8 @@ class Product extends Model
     {
         return $this->hasMany(Review::class);
     }
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? url('storage/' . $this->image) : null;
+    }
 }
