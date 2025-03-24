@@ -64,12 +64,12 @@ Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProv
 // Route::apiResource('products', ProductController::class);
 
 
-// Retrived All Products
+// Products
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/products/category/{category}', [ProductController::class, 'filterByCategory']);
 
-// Add Rate and Review for product
+// Review for product
 Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
 
 // انشاء الطلب
