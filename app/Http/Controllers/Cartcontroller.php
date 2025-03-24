@@ -65,7 +65,7 @@ class CartController extends Controller
     }
     public function removeFromCart($productId)
     {
-        $cart = Cache::get('cart', []);
+        +$cart = Cache::get('cart', []);
 
         if (isset($cart[$productId])) {
             if ($cart[$productId]['quantity'] > 1) {

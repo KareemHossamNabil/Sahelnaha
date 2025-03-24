@@ -12,6 +12,7 @@
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
         "predis/predis": "^2.3",
+        "stripe/stripe-php": "^16.6",
         "vlucas/phpdotenv": "*"
     },
     "require-dev": {
