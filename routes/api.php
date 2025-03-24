@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\OrderServiceController as APIOrderServiceController;
 use App\Http\Controllers\Apicontrollers\AuthController;
 use App\Http\Controllers\SocialiteController;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CheckoutController;
-
+use App\Http\Controllers\OrderServiceController;
 
 
 
@@ -74,6 +75,14 @@ Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
 
 // انشاء الطلب
 Route::post('/orders', [OrderController::class, 'store']);
+
+
+Route::prefix('order-services')->group(function () {
+    Route::post('/', [OrderServiceController::class, 'store']); // إنشاء طلب الخدمة وتأكيده
+    Route::get('/', [OrderServiceController::class, 'index']); // عرض جميع طلبات الخدمة
+});
+
+
 
 // Cart Routes
 Route::post('/cart/add/{productId}', [CartController::class, 'addToCart']);
