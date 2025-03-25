@@ -6,17 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\OrderService;
 use App\Models\ServiceType;
 use App\Models\PaymentMethod;
+use App\Models\Technician;
+use App\Notifications\NewOrderAssigned;
+use App\Notifications\NewServiceNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Notification;
 
 class OrderServiceController extends Controller
 {
-    // نقطة نهائية لإنشاء طلب الخدمة وتأكيده
     public function store(Request $request)
     {
-        // التحقق من صحة البيانات
         $validated = $request->validate([
-            'service_type_name' => 'required|exists:service_types,name', // تغيير من service_type_key إلى service_type_name
+            'service_type_name' => 'required|exists:service_types,name',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'date' => 'required|date',
@@ -26,19 +28,14 @@ class OrderServiceController extends Controller
             'payment_method_key' => 'required|in:mastercard,vodafone_cash',
         ]);
 
-        // جلب معرف نوع الخدمة بناءً على الاسم العربي
         $serviceType = ServiceType::where('name', $validated['service_type_name'])->first();
-
-        // جلب معرف طريقة الدفع بناءً على المفتاح
         $paymentMethod = PaymentMethod::where('key', $validated['payment_method_key'])->first();
 
-        // التعامل مع الصورة المرفقة
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('images', 'public');
         }
 
-        // إنشاء طلب الخدمة بحالة "confirmed" مباشرة
         $orderService = OrderService::create([
             'service_type_id' => $serviceType->id,
             'description' => $validated['description'] ?? null,
@@ -51,7 +48,12 @@ class OrderServiceController extends Controller
             'status' => 'confirmed',
         ]);
 
-        // إرجاع رسالة التأكيد مع تفاصيل الطلب
+        // اختيار فني بناءً على المهنة (افتراض أن اسم الخدمة مرتبط بالمهنة)
+        $technician = Technician::where('occupation', $serviceType->name)->first(); // أول فني مهنته تطابق نوع الخدمة
+        if ($technician) {
+            Notification::send($technician, new NewServiceNotification($orderService));
+        }
+
         return response()->json([
             'status' => 201,
             'message' => 'شكرًا لك، حجزك تم بنجاح',
@@ -67,10 +69,9 @@ class OrderServiceController extends Controller
                 'created_at' => $orderService->created_at,
                 'updated_at' => $orderService->updated_at,
             ]
-        ],);
+        ]);
     }
 
-    // عرض جميع طلبات الخدمة
     public function index()
     {
         $orderServices = OrderService::with(['serviceType', 'paymentMethod'])->get();

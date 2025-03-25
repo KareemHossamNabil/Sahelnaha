@@ -3,16 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 
 class Technician extends Model
 {
-    use SoftDeletes;
+    use Notifiable;
 
-    protected $fillable = ['name', 'email', 'password', 'address'];
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class);
-    }
+    protected $fillable = [
+        'name',
+        'phone',
+        'email',
+        'rating',
+        'occupation',
+        'years_of_experience',
+    ];
 }
