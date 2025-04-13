@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ServiceType extends Model
 {
-    protected $fillable = ['key', 'name'];
+    protected $fillable = ['id', 'name'];
 
     // العلاقة مع الطلبات
     public function orderServices()

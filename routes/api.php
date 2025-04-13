@@ -83,7 +83,6 @@ Route::prefix('order-services')->group(function () {
 });
 
 
-
 // Cart Routes
 Route::post('/cart/add/{productId}', [CartController::class, 'addToCart']);
 Route::get('/cart', [CartController::class, 'viewCart']);
