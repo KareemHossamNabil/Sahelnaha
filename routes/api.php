@@ -77,10 +77,10 @@ Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
 Route::post('/orders', [OrderController::class, 'store']);
 
 
-Route::prefix('order-services')->group(function () {
-    Route::post('/', [OrderServiceController::class, 'store']); // إنشاء طلب الخدمة وتأكيده
-    Route::get('/', [OrderServiceController::class, 'index']); // عرض جميع طلبات الخدمة
-});
+
+
+Route::post('/order-services', [OrderServiceController::class, 'store']); // لإنشاء طلب جديد
+Route::get('/order-services', [OrderServiceController::class, 'index']);  // لعرض كل الطلبات
 
 
 // Cart Routes

@@ -11,7 +11,7 @@ class OrderService extends Model
         'description',
         'image',
         'date',
-        'time_slot',
+        'time_slot_id',
         'is_urgent',
         'address',
         'payment_method_id',
@@ -28,5 +28,9 @@ class OrderService extends Model
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+    }
+    public function timeSlot()
+    {
+        return $this->belongsTo(TimeSlot::class);
     }
 }

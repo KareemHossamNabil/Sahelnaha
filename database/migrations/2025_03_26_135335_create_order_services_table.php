@@ -14,7 +14,7 @@ class CreateOrderServicesTable extends Migration
             $table->text('description')->nullable();
             $table->string('image')->nullable();
             $table->date('date');
-            $table->foreignId('time_slot_id')->constrained('time_slots')->onDelete('cascade');
+            $table->foreignId('time_slot_id')->constrained('time_slots')->onDelete('cascade'); // required ومش nullable
             $table->boolean('is_urgent')->default(false);
             $table->string('address');
             $table->foreignId('payment_method_id')->constrained()->onDelete('cascade');
