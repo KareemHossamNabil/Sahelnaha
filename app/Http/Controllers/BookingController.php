@@ -131,14 +131,6 @@ class BookingController extends Controller
      */
     public function getAvailableTimeSlots(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'date' => 'required|date_format:Y-m-d|after_or_equal:today',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         // Get time slots from database
         $timeSlots = TimeSlot::all();
 

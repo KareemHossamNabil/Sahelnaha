@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AddressController;
 use App\Http\Controllers\ProblemTypeController;
 use App\Http\Controllers\Apicontrollers\AuthController;
 use App\Http\Controllers\BookingController;
@@ -79,21 +80,25 @@ Route::post('/cart/update/{productId}', [CartController::class, 'updateQuantity'
 Route::delete('/cart/clear', [CartController::class, 'clearCart']);
 
 
+// Here is All Routes Related to Order Service or Describe A problem
+
+// Problem Tyeps
 Route::get('/problem-types', [ProblemTypeController::class, 'index']);
 Route::get('/services/{id}/problem-types', [ProblemTypeController::class, 'getByService']);
 Route::get('/problem-types/{id}', [ProblemTypeController::class, 'show']);
 
-
-
+// Schedule and Time Slot
 Route::get('available-dates', [BookingController::class, 'getAvailableDates']);
 Route::get('available-time-slots', [BookingController::class, 'getAvailableTimeSlots']);
 Route::post('schedule', [BookingController::class, 'storeSchedule']);
 
-Route::get('/init-session', function () {
-    return response()->json(['message' => 'API route working']);
-});
 
-
+// Step 3: Address
+Route::get('addresses', [AddressController::class, 'index']);
+Route::post('address', [AddressController::class, 'store']);
+Route::put('address/{id}', [AddressController::class, 'update']);
+Route::delete('address/{id}', [AddressController::class, 'destroy']);
+Route::post('select-address', [BookingController::class, 'selectAddress']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
