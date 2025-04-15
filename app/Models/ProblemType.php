@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Service extends Model
+class ProblemType extends Model
 {
     use HasFactory;
 
@@ -16,10 +16,11 @@ class Service extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'service_name',
-        'category',
-        'description',
-        'image_path',
+        'service_id',
+        'name',
+        'name_en',
+        'icon',
+        'is_active',
     ];
 
     /**
@@ -27,12 +28,15 @@ class Service extends Model
      *
      * @var array<string, string>
      */
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
     /**
-     * Get the problem types for the service.
+     * Get the service that owns the problem type.
      */
-    public function problemTypes(): HasMany
+    public function service(): BelongsTo
     {
-        return $this->hasMany(ProblemType::class);
+        return $this->belongsTo(Service::class);
     }
 }

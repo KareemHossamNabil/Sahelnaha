@@ -9,10 +9,25 @@ class TimeSlot extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'name_en',
+        'start_time',
+        'end_time',
+        'is_active',
+    ];
 
-    public function orderServices()
-    {
-        return $this->hasMany(OrderService::class);
-    }
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }

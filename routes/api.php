@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\API\OrderServiceController as APIOrderServiceController;
+use App\Http\Controllers\ProblemTypeController;
 use App\Http\Controllers\Apicontrollers\AuthController;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\SocialiteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -61,10 +62,6 @@ Route::get('/offers/{id}', [OfferController::class, 'show']);
 Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
 Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
-// Products of the Market
-// Route::apiResource('products', ProductController::class);
-
-
 // Products
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
@@ -72,13 +69,6 @@ Route::get('/products/category/{category}', [ProductController::class, 'filterBy
 
 // Review for product
 Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
-
-// انشاء الطلب
-Route::post('/orders', [OrderController::class, 'store']);
-
-
-Route::post('/order-services', [OrderServiceController::class, 'store']); // لإنشاء طلب جديد
-Route::get('/order-services', [OrderServiceController::class, 'index']);  // لعرض كل الطلبات
 
 
 // Cart Routes
@@ -89,10 +79,15 @@ Route::post('/cart/update/{productId}', [CartController::class, 'updateQuantity'
 Route::delete('/cart/clear', [CartController::class, 'clearCart']);
 
 
-Route::prefix('checkout')->group(function () {
-    Route::get('/', [CheckoutController::class, 'showCheckout']);
-    Route::post('/process', [CheckoutController::class, 'processPayment']);
-});
+Route::get('/problem-types', [ProblemTypeController::class, 'index']);
+Route::get('/services/{id}/problem-types', [ProblemTypeController::class, 'getByService']);
+Route::get('/problem-types/{id}', [ProblemTypeController::class, 'show']);
+
+
+
+Route::get('available-dates', [BookingController::class, 'getAvailableDates']);
+Route::get('available-time-slots', [BookingController::class, 'getAvailableTimeSlots']);
+Route::post('schedule', [BookingController::class, 'storeSchedule']);
 
 Route::get('/init-session', function () {
     return response()->json(['message' => 'API route working']);
