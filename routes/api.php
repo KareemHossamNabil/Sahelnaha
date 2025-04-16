@@ -19,8 +19,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\OrderServiceController;
-use App\Http\Controllers\ServiceTypeController;
+use App\Http\Controllers\ServiceRequest\ServiceTypeController;
 use App\Http\Controllers\TechnicianOfferController;
 
 // ✅ Routes غير محمية
@@ -64,6 +63,7 @@ Route::get('/offers/{id}', [OfferController::class, 'show']);
 Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
 Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
+
 // Products
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
@@ -83,14 +83,14 @@ Route::delete('/cart/clear', [CartController::class, 'clearCart']);
 
 // Here is All Routes Related to Order Service or Describe A problem
 
-
-
 // Retireve The Service Types
 Route::prefix('service-types')->group(function () {
     Route::get('/', [ServiceTypeController::class, 'index']);
     Route::get('/{id}', [ServiceTypeController::class, 'show']);
     Route::get('/category/{category}', [ServiceTypeController::class, 'getByCategory']);
 });
+
+
 
 Route::get('/offers', [TechnicianOfferController::class, 'index']);
 Route::post('/offers', [TechnicianOfferController::class, 'store']);
