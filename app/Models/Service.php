@@ -31,8 +31,4 @@ class Service extends Model
     /**
      * Get the problem types for the service.
      */
-    public function problemTypes(): HasMany
-    {
-        return $this->hasMany(ProblemType::class);
-    }
 }

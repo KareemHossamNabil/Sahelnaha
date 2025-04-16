@@ -17,4 +17,9 @@ class Technician extends Model
         'occupation',
         'years_of_experience',
     ];
+
+    public function offers()
+    {
+        return $this->hasMany(TechnicianOffers::class, 'technician_id');
+    }
 }

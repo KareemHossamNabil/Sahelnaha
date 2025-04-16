@@ -10,29 +10,27 @@ use Illuminate\Support\Facades\Validator;
 class AddressController extends Controller
 {
     /**
-     * Display a listing of the user's addresses.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * Get the user's only address (default one).
      */
-    public function index(Request $request)
+    public function show(Request $request)
     {
-        $addresses = Address::where('user_id', $request->user()->id)
-            ->orderBy('is_default', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $address = Address::where('user_id', $request->user()->id)->first();
+
+        if (!$address) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No address found'
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $addresses
+            'data' => $address
         ]);
     }
 
     /**
-     * Store a newly created address in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * Create or overwrite the user's address.
      */
     public function store(Request $request)
     {
@@ -41,66 +39,63 @@ class AddressController extends Controller
             'street' => 'required|string|max:255',
             'city' => 'required|string|max:255',
             'country' => 'required|string|max:255',
-            'is_default' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // If this is the first address or is_default is true,
-        // make all other addresses non-default
-        if ($request->is_default || Address::where('user_id', $request->user()->id)->count() === 0) {
-            Address::where('user_id', $request->user()->id)
-                ->update(['is_default' => false]);
-        }
+        // Check if address already exists
+        $address = Address::where('user_id', $request->user()->id)->first();
 
-        $address = Address::create([
-            'name' => $request->name,
-            'street' => $request->street,
-            'city' => $request->city,
-            'country' => $request->country,
-            'is_default' => $request->is_default ?? false,
-            'user_id' => $request->user()->id,
-        ]);
+        if ($address) {
+            // Update existing address
+            $address->update([
+                'name' => $request->name,
+                'street' => $request->street,
+                'city' => $request->city,
+                'country' => $request->country,
+                'is_default' => true,
+            ]);
+
+            $message = 'Address updated successfully';
+        } else {
+            // Create new address
+            $address = Address::create([
+                'user_id' => $request->user()->id,
+                'name' => $request->name,
+                'street' => $request->street,
+                'city' => $request->city,
+                'country' => $request->country,
+                'is_default' => true,
+            ]);
+
+            $message = 'Address created successfully';
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Address created successfully',
+            'message' => $message,
             'data' => $address
-        ], 201);
+        ]);
     }
 
     /**
-     * Update the specified address in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * Update the user's address.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
+        $address = Address::where('user_id', $request->user()->id)->firstOrFail();
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'street' => 'sometimes|required|string|max:255',
             'city' => 'sometimes|required|string|max:255',
             'country' => 'sometimes|required|string|max:255',
-            'is_default' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $address = Address::where('id', $id)
-            ->where('user_id', $request->user()->id)
-            ->firstOrFail();
-
-        // If setting this address as default, make all others non-default
-        if (isset($request->is_default) && $request->is_default) {
-            Address::where('user_id', $request->user()->id)
-                ->where('id', '!=', $id)
-                ->update(['is_default' => false]);
         }
 
         $address->update($request->all());
@@ -113,28 +108,13 @@ class AddressController extends Controller
     }
 
     /**
-     * Remove the specified address from storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * Delete the user's address.
      */
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request)
     {
-        $address = Address::where('id', $id)
-            ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+        $address = Address::where('user_id', $request->user()->id)->firstOrFail();
 
         $address->delete();
-
-        // If this was the default address, make another one default
-        if ($address->is_default) {
-            $newDefault = Address::where('user_id', $request->user()->id)->first();
-            if ($newDefault) {
-                $newDefault->is_default = true;
-                $newDefault->save();
-            }
-        }
 
         return response()->json([
             'success' => true,

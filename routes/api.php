@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\AddressController;
+use App\Http\Controllers\API\ServiceTypeController as APIServiceTypeController;
 use App\Http\Controllers\ProblemTypeController;
 use App\Http\Controllers\Apicontrollers\AuthController;
 use App\Http\Controllers\BookingController;
@@ -19,8 +20,8 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderServiceController;
-
-
+use App\Http\Controllers\ServiceTypeController;
+use App\Http\Controllers\TechnicianOfferController;
 
 // ✅ Routes غير محمية
 Route::post('signup', [AuthController::class, 'signup']);
@@ -82,23 +83,22 @@ Route::delete('/cart/clear', [CartController::class, 'clearCart']);
 
 // Here is All Routes Related to Order Service or Describe A problem
 
-// Problem Tyeps
-Route::get('/problem-types', [ProblemTypeController::class, 'index']);
-Route::get('/services/{id}/problem-types', [ProblemTypeController::class, 'getByService']);
-Route::get('/problem-types/{id}', [ProblemTypeController::class, 'show']);
-
-// Schedule and Time Slot
-Route::get('available-dates', [BookingController::class, 'getAvailableDates']);
-Route::get('available-time-slots', [BookingController::class, 'getAvailableTimeSlots']);
-Route::post('schedule', [BookingController::class, 'storeSchedule']);
 
 
-// Step 3: Address
-Route::get('addresses', [AddressController::class, 'index']);
-Route::post('address', [AddressController::class, 'store']);
-Route::put('address/{id}', [AddressController::class, 'update']);
-Route::delete('address/{id}', [AddressController::class, 'destroy']);
-Route::post('select-address', [BookingController::class, 'selectAddress']);
+// Retireve The Service Types
+Route::prefix('service-types')->group(function () {
+    Route::get('/', [ServiceTypeController::class, 'index']);
+    Route::get('/{id}', [ServiceTypeController::class, 'show']);
+    Route::get('/category/{category}', [ServiceTypeController::class, 'getByCategory']);
+});
+
+Route::get('/offers', [TechnicianOfferController::class, 'index']);
+Route::post('/offers', [TechnicianOfferController::class, 'store']);
+Route::get('/offers/{id}', [TechnicianOfferController::class, 'show']);
+Route::put('/offers/{id}', [TechnicianOfferController::class, 'update']);
+Route::delete('/offers/{id}', [TechnicianOfferController::class, 'destroy']);
+Route::get('/technician/offers', [TechnicianOfferController::class, 'getTechnicianOffers']);
+
 
 
 Route::middleware('auth:sanctum')->group(function () {
