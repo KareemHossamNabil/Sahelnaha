@@ -19,6 +19,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ServiceRequest\PaymentMethodController;
 use App\Http\Controllers\ServiceRequest\ServiceTypeController;
 use App\Http\Controllers\TechnicianOfferController;
 
@@ -90,6 +91,9 @@ Route::prefix('service-types')->group(function () {
     Route::get('/category/{category}', [ServiceTypeController::class, 'getByCategory']);
 });
 
+// Payment Methods
+Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+Route::get('/payment-methods/{id}', [PaymentMethodController::class, 'show']);
 
 
 Route::get('/offers', [TechnicianOfferController::class, 'index']);

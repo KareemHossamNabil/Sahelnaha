@@ -13,21 +13,10 @@ return new class extends Migration
     {
         Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
             $table->string('type'); // 'card', 'cash', etc.
             $table->string('card_number')->nullable();
             $table->boolean('is_default')->default(false);
             $table->timestamps();
-
-            // إنشاء Foreign Key للربط مع جدول المستخدمين
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('cascade');
-
-            // إنشاء فهرس للبحث السريع
-            $table->index('user_id');
-            $table->index('type');
         });
     }
 
