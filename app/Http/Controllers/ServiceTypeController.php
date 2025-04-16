@@ -39,7 +39,7 @@ class ServiceTypeController extends Controller
         }
 
         return response()->json([
-            'status' => true,
+            'status' => 200,
             'message' => 'تم استرجاع نوع الخدمة بنجاح',
             'data' => $serviceType
         ]);
@@ -75,7 +75,7 @@ class ServiceTypeController extends Controller
         ]);
 
         return response()->json([
-            'status' => true,
+            'status' => 200,
             'message' => 'تم إنشاء نوع الخدمة بنجاح',
             'data' => $serviceType
         ], 201);
