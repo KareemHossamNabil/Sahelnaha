@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\API\AddressController;
+use App\Http\Controllers\ServiceRequest\AddressController;
 use App\Http\Controllers\API\ServiceTypeController as APIServiceTypeController;
 use App\Http\Controllers\ProblemTypeController;
 use App\Http\Controllers\Apicontrollers\AuthController;
@@ -19,14 +19,22 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ServiceRequest\AddressController as ServiceRequestAddressController;
 use App\Http\Controllers\ServiceRequest\PaymentMethodController;
 use App\Http\Controllers\ServiceRequest\ServiceTypeController;
 use App\Http\Controllers\TechnicianOfferController;
 
+use App\Http\Controllers\Apicontrollers\LoginController;
+use App\Http\Controllers\Apicontrollers\LoginController as ApicontrollersLoginController;
+use App\Http\Controllers\ServiceRequest\ServiceRequestController;
+use App\Http\Controllers\ServiceRequest\TimeSlotController;
 // ✅ Routes غير محمية
 Route::post('signup', [AuthController::class, 'signup']);
 Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('signin', [AuthController::class, 'signin']);
+
+
+Route::post('/login', [LoginController::class, 'login']);
 
 
 
@@ -95,6 +103,23 @@ Route::prefix('service-types')->group(function () {
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
 Route::get('/payment-methods/{id}', [PaymentMethodController::class, 'show']);
 
+//  Address About The User
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/address', [AddressController::class, 'show']);
+    Route::post('/address', [AddressController::class, 'store']);
+    Route::put('/address', [AddressController::class, 'update']);
+    Route::delete('/address', [AddressController::class, 'destroy']);
+});
+
+
+
+Route::get('/timeslots', [TimeSlotController::class, 'index']);
+
+// Service Requests
+Route::post('/service-requests', [ServiceRequestController::class, 'store']);
+Route::get('/service-requests', [ServiceRequestController::class, 'index']);
+Route::get('/service-requests/{id}', [ServiceRequestController::class, 'show']);
+Route::put('/service-requests/{id}', [ServiceRequestController::class, 'update']);
 
 Route::get('/offers', [TechnicianOfferController::class, 'index']);
 Route::post('/offers', [TechnicianOfferController::class, 'store']);

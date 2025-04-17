@@ -43,8 +43,8 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
-    // protected function setPasswordAttribute($value)
-    // {
-    //     $this->attributes['password'] = Hash::make($value);
-    // }
+    protected function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = Hash::make($value);
+    }
 }
