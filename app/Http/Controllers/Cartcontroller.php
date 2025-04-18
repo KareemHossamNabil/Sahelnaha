@@ -65,45 +65,98 @@ class CartController extends Controller
     }
     public function removeFromCart($productId)
     {
-        +$cart = Cache::get('cart', []);
+        // الحصول على سلة التسوق من الكاش
+        $cart = Cache::get('cart', []);
 
-        if (isset($cart[$productId])) {
-            if ($cart[$productId]['quantity'] > 1) {
+        // التحقق من وجود المنتج في السلة
+        if (!isset($cart[$productId])) {
+            return response()->json([
+                'status' => 404,
+                'msg' => 'Product not found in cart'
+            ], 404);
+        }
 
-                $cart[$productId]['quantity']--;
-            } else {
+        // تقليل كمية المنتج أو إزالته
+        if ($cart[$productId]['quantity'] > 1) {
+            // تقليل الكمية إذا كانت أكثر من 1
+            $cart[$productId]['quantity']--;
+            $message = 'Product quantity decreased';
+        } else {
+            // إزالة المنتج إذا كانت الكمية 1
+            unset($cart[$productId]);
+            $message = 'Product removed from cart';
+        }
 
-                unset($cart[$productId]);
-            }
-
-
-            if (empty($cart)) {
-                Cache::forget('cart');
-                return response()->json([
-                    'status' => 200,
-                    'msg' => 'Cart is now empty',
-                    'cart' => [],
-                    'total' => 0
-                ]);
-            }
-
-            Cache::put('cart', $cart, now()->addHours(2));
-            $total = $this->calculateTotal($cart);
-
+        // التعامل مع السلة الفارغة
+        if (empty($cart)) {
+            Cache::forget('cart');
             return response()->json([
                 'status' => 200,
-                'msg' => 'Product updated in cart',
-                'cart' => $cart,
-                'total' => $total
+                'msg' => 'Cart is now empty',
+                'cart' => [],
+                'total' => 0
             ]);
         }
 
+        // تحديث السلة في الكاش
+        Cache::put('cart', $cart, now()->addHours(2));
+
+        // حساب المجموع الكلي
+        $total = $this->calculateTotal($cart);
+
+        // إرجاع الاستجابة
         return response()->json([
-            'status' => 404,
-            'msg' => 'Product not found in cart'
-        ], 404);
+            'status' => 200,
+            'msg' => $message,
+            'cart' => $cart,
+            'total' => $total
+        ]);
     }
 
+    public function deleteProduct($productId)
+    {
+        // الحصول على سلة التسوق من الكاش
+        $cart = Cache::get('cart', []);
+
+        // التحقق من وجود المنتج في السلة
+        if (!isset($cart[$productId])) {
+            return response()->json([
+                'status' => 404,
+                'msg' => 'Product not found in cart'
+            ], 404);
+        }
+
+        // حفظ اسم المنتج قبل حذفه للاستخدام في الرسالة
+        $productName = $cart[$productId]['name'] ?? 'Product';
+
+        // حذف المنتج من السلة بغض النظر عن الكمية
+        unset($cart[$productId]);
+
+        // التعامل مع السلة الفارغة
+        if (empty($cart)) {
+            Cache::forget('cart');
+            return response()->json([
+                'status' => 200,
+                'msg' => 'Cart is now empty',
+                'cart' => [],
+                'total' => 0
+            ]);
+        }
+
+        // تحديث السلة في الكاش
+        Cache::put('cart', $cart, now()->addHours(2));
+
+        // حساب المجموع الكلي
+        $total = $this->calculateTotal($cart);
+
+        // إرجاع الاستجابة
+        return response()->json([
+            'status' => 200,
+            'msg' => "$productName has been removed from your cart",
+            'cart' => $cart,
+            'total' => $total
+        ]);
+    }
 
     public function clearCart()
     {

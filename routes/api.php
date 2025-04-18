@@ -1,7 +1,6 @@
 <?php
 
-use App\Http\Controllers\ServiceRequest\AddressController;
-use App\Http\Controllers\API\ServiceTypeController as APIServiceTypeController;
+
 use App\Http\Controllers\ProblemTypeController;
 use App\Http\Controllers\Apicontrollers\AuthController;
 use App\Http\Controllers\BookingController;
@@ -19,13 +18,13 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\ServiceRequest\AddressController as ServiceRequestAddressController;
+use App\Http\Controllers\ServiceRequest\AddressController;
 use App\Http\Controllers\ServiceRequest\PaymentMethodController;
 use App\Http\Controllers\ServiceRequest\ServiceTypeController;
 use App\Http\Controllers\TechnicianOfferController;
 
 use App\Http\Controllers\Apicontrollers\LoginController;
-use App\Http\Controllers\Apicontrollers\LoginController as ApicontrollersLoginController;
+use App\Http\Controllers\Apicontrollers\RegisterController;
 use App\Http\Controllers\ServiceRequest\ServiceRequestController;
 use App\Http\Controllers\ServiceRequest\TimeSlotController;
 // ✅ Routes غير محمية
@@ -33,10 +32,8 @@ Route::post('signup', [AuthController::class, 'signup']);
 Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('signin', [AuthController::class, 'signin']);
 
-
+Route::post('register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
-
-
 
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-otp', [AuthController::class, 'resetOtp']);
@@ -86,8 +83,9 @@ Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
 Route::post('/cart/add/{productId}', [CartController::class, 'addToCart']);
 Route::get('/cart', [CartController::class, 'viewCart']);
 Route::delete('/cart/remove/{productId}', [CartController::class, 'removeFromCart']);
-Route::post('/cart/update/{productId}', [CartController::class, 'updateQuantity']);
 Route::delete('/cart/clear', [CartController::class, 'clearCart']);
+Route::delete('/cart/{productId}', [CartController::class, 'deleteProduct']);
+
 
 
 // Here is All Routes Related to Order Service or Describe A problem

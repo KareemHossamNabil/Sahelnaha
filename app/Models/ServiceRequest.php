@@ -12,15 +12,24 @@ class ServiceRequest extends Model
     protected $fillable = [
         'user_id',
         'service_type_id',
-        'address_id',
-        'scheduled_date',
-        'time_slot_id',
-        'payment_method_id',
         'description',
         'images',
+        'scheduled_date',
+        'is_urgent',
+        'time_slot_id',
+        'payment_method_id',
+        'address', // حقل العنوان البسيط
         'status',
+        'technician_id',
     ];
 
+    protected $casts = [
+        'scheduled_date' => 'date',
+        'images' => 'array',
+        'is_urgent' => 'boolean',
+    ];
+
+    // العلاقات
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -31,11 +40,6 @@ class ServiceRequest extends Model
         return $this->belongsTo(ServiceType::class);
     }
 
-    public function address()
-    {
-        return $this->belongsTo(Address::class);
-    }
-
     public function timeSlot()
     {
         return $this->belongsTo(TimeSlot::class);
@@ -44,5 +48,10 @@ class ServiceRequest extends Model
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function technician()
+    {
+        return $this->belongsTo(User::class, 'technician_id');
     }
 }
