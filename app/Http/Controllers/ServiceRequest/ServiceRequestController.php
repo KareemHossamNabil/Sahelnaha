@@ -19,14 +19,14 @@ class ServiceRequestController extends Controller
         $validator = Validator::make($request->all(), [
             'service_type_id' => 'required|exists:service_types,id',
             'description' => 'nullable|string',
-            'scheduled_date' => 'required|date|after_or_equal:today',
-            'time_slot_id' => 'required|exists:time_slots,id',
-            'payment_method_id' => 'required|exists:payment_methods,id',
-            'address' => 'nullable|string', // العنوان اختياري لأننا سنستخدم عنوان المستخدم إذا لم يتم توفيره
-            'is_urgent' => 'boolean',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'use_user_address' => 'boolean', // إضافة حقل للتحكم في استخدام عنوان المستخدم
+            'scheduled_date' => 'required|date|after_or_equal:today',
+            'is_urgent' => 'boolean',
+            'time_slot_id' => 'required|exists:time_slots,id',
+            'payment_method_id' => 'required|exists:payment_methods,id',
+            'address' => 'nullable|string',
+            'use_user_address' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -37,37 +37,35 @@ class ServiceRequestController extends Controller
             ], 422);
         }
 
-        // الحصول على المستخدم الحالي
         $user = Auth::user();
 
-        // معالجة الصور إذا وجدت
-        $images = [];
+        // معالجة الصور ورفعها
+        $imageUrls = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('service_requests', 'public');
-                $images[] = $path;
+                $imageUrls[] = asset('storage/' . $path);
             }
         }
 
         // تحديد العنوان
         $address = $request->address;
 
-        // إذا لم يتم توفير عنوان أو طلب المستخدم استخدام عنوانه الأساسي
         if (empty($address) || ($request->use_user_address ?? true)) {
             $address = $user->address;
         }
 
-        // إنشاء طلب الخدمة
+        // إنشاء الطلب
         $serviceRequest = ServiceRequest::create([
             'user_id' => $user->id,
             'service_type_id' => $request->service_type_id,
             'description' => $request->description,
+            'images' => json_encode($imageUrls),
             'scheduled_date' => $request->scheduled_date,
+            'is_urgent' => $request->is_urgent ?? false,
             'time_slot_id' => $request->time_slot_id,
             'payment_method_id' => $request->payment_method_id,
-            'address' => $address, // استخدام العنوان المحدد
-            'is_urgent' => $request->is_urgent ?? false,
-            'images' => $images,
+            'address' => $address,
             'status' => 'pending',
         ]);
 
@@ -85,15 +83,13 @@ class ServiceRequestController extends Controller
     {
         $serviceRequest = ServiceRequest::findOrFail($id);
 
-        // التحقق من أن المستخدم هو صاحب الطلب
-        if (Auth()::id() !== $serviceRequest->user_id) {
+        if (Auth::id() !== $serviceRequest->user_id) {
             return response()->json([
                 'status' => false,
                 'message' => 'غير مصرح لك بتعديل هذا الطلب'
             ], 403);
         }
 
-        // التحقق من أن الطلب لا يزال في حالة معلق
         if ($serviceRequest->status !== 'pending') {
             return response()->json([
                 'status' => false,
@@ -105,10 +101,10 @@ class ServiceRequestController extends Controller
             'service_type_id' => 'sometimes|exists:service_types,id',
             'description' => 'nullable|string',
             'scheduled_date' => 'sometimes|date|after_or_equal:today',
+            'is_urgent' => 'boolean',
             'time_slot_id' => 'sometimes|exists:time_slots,id',
             'payment_method_id' => 'sometimes|exists:payment_methods,id',
             'address' => 'nullable|string',
-            'is_urgent' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -119,8 +115,15 @@ class ServiceRequestController extends Controller
             ], 422);
         }
 
-        // تحديث طلب الخدمة
-        $serviceRequest->update($request->all());
+        $serviceRequest->update($request->only([
+            'service_type_id',
+            'description',
+            'scheduled_date',
+            'is_urgent',
+            'time_slot_id',
+            'payment_method_id',
+            'address',
+        ]));
 
         return response()->json([
             'status' => true,
@@ -136,14 +139,87 @@ class ServiceRequestController extends Controller
     {
         $user = Auth::user();
 
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'المستخدم غير مسجل دخول',
+            ], 401);
+        }
+
+        // Check if the address property exists
+        $address = $user->address ?? null;
+
         return response()->json([
             'status' => true,
             'message' => 'تم استرجاع العنوان بنجاح',
             'data' => [
-                'address' => $user->address
+                'address' => $address
             ]
         ]);
     }
 
-    // باقي الدوال...
+    public function index()
+    {
+        $user = Auth::user();
+
+        // جلب كل الطلبات الخاصة بالمستخدم الحالي
+        $requests = ServiceRequest::with(['serviceType', 'timeSlot', 'paymentMethod', 'technician'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'تم جلب طلبات الخدمة بنجاح',
+            'data' => ServiceRequestResource::collection($requests),
+        ]);
+    }
+
+    public function show($id)
+    {
+        $serviceRequest = ServiceRequest::with(['serviceType', 'timeSlot', 'paymentMethod', 'technician'])
+            ->findOrFail($id);
+
+        // التحقق من ملكية المستخدم للطلب
+        if ($serviceRequest->user_id !== Auth::id()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'غير مصرح لك بمشاهدة هذا الطلب'
+            ], 403);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'تم جلب تفاصيل الطلب بنجاح',
+            'data' => new ServiceRequestResource($serviceRequest),
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $serviceRequest = ServiceRequest::findOrFail($id);
+
+        // التحقق من ملكية المستخدم للطلب
+        if ($serviceRequest->user_id !== Auth::id()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'غير مصرح لك بحذف هذا الطلب'
+            ], 403);
+        }
+
+        // يمكن حذف الطلب فقط إذا كان في حالة pending
+        if ($serviceRequest->status !== 'pending') {
+            return response()->json([
+                'status' => false,
+                'message' => 'لا يمكن حذف الطلب بعد قبوله أو تنفيذه أو إلغائه'
+            ], 400);
+        }
+
+        $serviceRequest->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'تم حذف طلب الخدمة بنجاح',
+        ]);
+    }
 }

@@ -114,10 +114,15 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/timeslots', [TimeSlotController::class, 'index']);
 
 // Service Requests
-Route::post('/service-requests', [ServiceRequestController::class, 'store']);
-Route::get('/service-requests', [ServiceRequestController::class, 'index']);
-Route::get('/service-requests/{id}', [ServiceRequestController::class, 'show']);
-Route::put('/service-requests/{id}', [ServiceRequestController::class, 'update']);
+Route::middleware('auth:sanctum')->prefix('service-requests')->group(function () {
+    Route::get('/', [ServiceRequestController::class, 'index']);
+    Route::post('/', [ServiceRequestController::class, 'store']);
+    Route::get('/{id}', [ServiceRequestController::class, 'show']);
+    Route::put('/{id}', [ServiceRequestController::class, 'update']);
+    Route::delete('/{id}', [ServiceRequestController::class, 'destroy']);
+    Route::get('/user/address', [ServiceRequestController::class, 'getUserAddress']);
+});
+
 
 Route::get('/offers', [TechnicianOfferController::class, 'index']);
 Route::post('/offers', [TechnicianOfferController::class, 'store']);

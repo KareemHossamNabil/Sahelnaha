@@ -18,14 +18,14 @@ class ServiceRequest extends Model
         'is_urgent',
         'time_slot_id',
         'payment_method_id',
-        'address', // حقل العنوان البسيط
+        'address',
         'status',
         'technician_id',
     ];
 
     protected $casts = [
         'scheduled_date' => 'date',
-        'images' => 'array',
+        'images' => 'array', // لأننا بنخزنها كـ JSON
         'is_urgent' => 'boolean',
     ];
 
