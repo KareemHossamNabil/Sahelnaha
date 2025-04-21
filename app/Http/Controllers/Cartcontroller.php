@@ -65,10 +65,8 @@ class CartController extends Controller
     }
     public function removeFromCart($productId)
     {
-        // الحصول على سلة التسوق من الكاش
         $cart = Cache::get('cart', []);
 
-        // التحقق من وجود المنتج في السلة
         if (!isset($cart[$productId])) {
             return response()->json([
                 'status' => 404,
@@ -76,18 +74,17 @@ class CartController extends Controller
             ], 404);
         }
 
-        // تقليل كمية المنتج أو إزالته
         if ($cart[$productId]['quantity'] > 1) {
-            // تقليل الكمية إذا كانت أكثر من 1
+
             $cart[$productId]['quantity']--;
             $message = 'Product quantity decreased';
         } else {
-            // إزالة المنتج إذا كانت الكمية 1
+
             unset($cart[$productId]);
             $message = 'Product removed from cart';
         }
 
-        // التعامل مع السلة الفارغة
+
         if (empty($cart)) {
             Cache::forget('cart');
             return response()->json([
@@ -98,13 +95,11 @@ class CartController extends Controller
             ]);
         }
 
-        // تحديث السلة في الكاش
+
         Cache::put('cart', $cart, now()->addHours(2));
 
-        // حساب المجموع الكلي
         $total = $this->calculateTotal($cart);
 
-        // إرجاع الاستجابة
         return response()->json([
             'status' => 200,
             'msg' => $message,
@@ -115,10 +110,10 @@ class CartController extends Controller
 
     public function deleteProduct($productId)
     {
-        // الحصول على سلة التسوق من الكاش
+
         $cart = Cache::get('cart', []);
 
-        // التحقق من وجود المنتج في السلة
+
         if (!isset($cart[$productId])) {
             return response()->json([
                 'status' => 404,
@@ -126,13 +121,13 @@ class CartController extends Controller
             ], 404);
         }
 
-        // حفظ اسم المنتج قبل حذفه للاستخدام في الرسالة
+
         $productName = $cart[$productId]['name'] ?? 'Product';
 
-        // حذف المنتج من السلة بغض النظر عن الكمية
+
         unset($cart[$productId]);
 
-        // التعامل مع السلة الفارغة
+
         if (empty($cart)) {
             Cache::forget('cart');
             return response()->json([
@@ -143,13 +138,11 @@ class CartController extends Controller
             ]);
         }
 
-        // تحديث السلة في الكاش
+
         Cache::put('cart', $cart, now()->addHours(2));
 
-        // حساب المجموع الكلي
         $total = $this->calculateTotal($cart);
 
-        // إرجاع الاستجابة
         return response()->json([
             'status' => 200,
             'msg' => "$productName has been removed from your cart",

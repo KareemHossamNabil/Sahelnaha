@@ -5,27 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TechnicianOffers extends Model
+class TechnicianOffer extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'issue_id',
+        'service_request_id',
         'technician_id',
         'description',
         'min_price',
         'max_price',
-        'currency', // EGP
-        'status',  // pending , completed , rejected
+        'currency',
+        'status'
     ];
 
-    public function issue()
+    // العلاقة مع طلب الخدمة
+    public function serviceRequest()
     {
-        return $this->belongsTo(UserIssues::class, 'issue_id');
+        return $this->belongsTo(ServiceRequest::class);
     }
 
+    // العلاقة مع الفني
     public function technician()
     {
-        return $this->belongsTo(Technician::class, 'technician_id');
+        return $this->belongsTo(Technician::class);
     }
 }

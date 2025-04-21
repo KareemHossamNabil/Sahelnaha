@@ -27,6 +27,8 @@ use App\Http\Controllers\Apicontrollers\LoginController;
 use App\Http\Controllers\Apicontrollers\RegisterController;
 use App\Http\Controllers\ServiceRequest\ServiceRequestController;
 use App\Http\Controllers\ServiceRequest\TimeSlotController;
+use App\Http\Controllers\UserOfferController;
+
 // ✅ Routes غير محمية
 Route::post('signup', [AuthController::class, 'signup']);
 Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
@@ -123,14 +125,26 @@ Route::middleware('auth:sanctum')->prefix('service-requests')->group(function ()
     Route::get('/user/address', [ServiceRequestController::class, 'getUserAddress']);
 });
 
+// Technician Offer
 
-Route::get('/offers', [TechnicianOfferController::class, 'index']);
+// Techincian Offers Not For Home Page
+Route::get('/technician-offers', [TechnicianOfferController::class, 'index']);
 Route::post('/offers', [TechnicianOfferController::class, 'store']);
 Route::get('/offers/{id}', [TechnicianOfferController::class, 'show']);
 Route::put('/offers/{id}', [TechnicianOfferController::class, 'update']);
 Route::delete('/offers/{id}', [TechnicianOfferController::class, 'destroy']);
 Route::get('/technician/offers', [TechnicianOfferController::class, 'getTechnicianOffers']);
 
+// User deals with The Technician Offers
+Route::middleware(['auth:sanctum'])->prefix('user')->group(function () {
+
+    Route::get('service-requests/{serviceRequestId}/offers', [UserOfferController::class, 'getOffersByServiceRequest']);
+    Route::post('offers/{offerId}/accept', [UserOfferController::class, 'acceptOffer']);
+    Route::post('offers/{offerId}/cancel', [UserOfferController::class, 'cancelAcceptedOffer']);
+    Route::post('offers/{offerId}/confirm', [UserOfferController::class, 'confirmOffer']);
+    Route::get('offers/accepted', [UserOfferController::class, 'getMyAcceptedOffers']);
+    Route::get('offers/completed', [UserOfferController::class, 'getMyCompletedOffers']);
+});
 
 
 Route::middleware('auth:sanctum')->group(function () {
