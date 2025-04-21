@@ -125,15 +125,15 @@ Route::middleware('auth:sanctum')->prefix('service-requests')->group(function ()
     Route::get('/user/address', [ServiceRequestController::class, 'getUserAddress']);
 });
 
-// Technician Offer
 
+// Technician Offer
 // Techincian Offers Not For Home Page
 Route::get('/technician-offers', [TechnicianOfferController::class, 'index']);
-Route::post('/offers', [TechnicianOfferController::class, 'store']);
-Route::get('/offers/{id}', [TechnicianOfferController::class, 'show']);
-Route::put('/offers/{id}', [TechnicianOfferController::class, 'update']);
-Route::delete('/offers/{id}', [TechnicianOfferController::class, 'destroy']);
-Route::get('/technician/offers', [TechnicianOfferController::class, 'getTechnicianOffers']);
+Route::post('/technician-offers', [TechnicianOfferController::class, 'store']);
+Route::get('/technician-offers/{id}', [TechnicianOfferController::class, 'show']);
+Route::put('/technician-offers/{id}', [TechnicianOfferController::class, 'update']);
+Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
+Route::get('/technician/technician-offers', [TechnicianOfferController::class, 'getTechnicianOffers']);
 
 // User deals with The Technician Offers
 Route::middleware(['auth:sanctum'])->prefix('user')->group(function () {

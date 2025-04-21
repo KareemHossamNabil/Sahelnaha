@@ -23,7 +23,7 @@ class ServiceRequestResource extends JsonResource
             ],
             'service_type' => [
                 'id' => $this->serviceType->id,
-                'name' => $this->serviceType->name,
+                'name' => $this->serviceType->name_ar,
             ],
             'description' => $this->description,
             'images' => $this->images, // JSON array of image paths
@@ -31,12 +31,15 @@ class ServiceRequestResource extends JsonResource
             'is_urgent' => $this->is_urgent,
             'time_slot' => [
                 'id' => $this->timeSlot->id,
-                'from' => $this->timeSlot->from,
-                'to' => $this->timeSlot->to,
+                'name' => $this->timeSlot->name,
+                'start_at' => $this->timeSlot->start_time,
+                'end_at' => $this->timeslot->end_time
             ],
             'payment_method' => [
                 'id' => $this->paymentMethod->id,
-                'method' => $this->paymentMethod->name,
+                'type' => $this->paymentMethod->type,
+                'card_number' => $this->paymentMethod->card_number,
+
             ],
             'address' => $this->address,
             'status' => $this->status,
