@@ -22,7 +22,7 @@ use App\Http\Controllers\ServiceRequest\AddressController;
 use App\Http\Controllers\ServiceRequest\PaymentMethodController;
 use App\Http\Controllers\ServiceRequest\ServiceTypeController;
 use App\Http\Controllers\TechnicianOfferController;
-
+use App\Http\Controllers\TechnicianWorkScheduleController;
 use App\Http\Controllers\Apicontrollers\LoginController;
 use App\Http\Controllers\Apicontrollers\RegisterController;
 use App\Http\Controllers\ServiceRequest\ServiceRequestController;
@@ -144,6 +144,13 @@ Route::middleware(['auth:sanctum'])->prefix('user')->group(function () {
     Route::post('offers/{offerId}/confirm', [UserOfferController::class, 'confirmOffer']);
     Route::get('offers/accepted', [UserOfferController::class, 'getMyAcceptedOffers']);
     Route::get('offers/completed', [UserOfferController::class, 'getMyCompletedOffers']);
+});
+
+
+// Technician Work Schedule -->> "It's Depend on the response from the User"
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/technician/work-schedules', [TechnicianWorkScheduleController::class, 'index']);
+    Route::get('/technician/work-schedules/{id}', [TechnicianWorkScheduleController::class, 'show']);
 });
 
 

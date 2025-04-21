@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('technician_work_schedules', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('technician_id')->constrained()->onDelete('cascade');
+            $table->foreignId('technician_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('service_request_id')->constrained()->onDelete('cascade');
             $table->timestamp('scheduled_at');
+            $table->decimal('price', 8, 2);
+            $table->string('service_type');
+            $table->string('address');
             $table->timestamps();
         });
     }
