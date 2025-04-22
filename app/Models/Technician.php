@@ -2,17 +2,39 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Technician extends Model
+class Technician extends Authenticatable
 {
-    use SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    protected $fillable = ['name', 'email', 'password', 'address'];
+    protected $table = 'technicians';
 
-    public function orders()
-    {
-        return $this->hasMany(Order::class);
-    }
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'email',
+        'password',
+        'address',
+        'phone',
+        'register_otp',
+        'reset_otp',
+        'is_verified',
+        'identity_image',
+        'is_verified_identity',
+        'experience_text',
+        'work_images',
+        'qr_code',
+    ];
+
+    protected $hidden = [
+        'password',
+        'register_otp',
+        'reset_otp',
+    ];
 }

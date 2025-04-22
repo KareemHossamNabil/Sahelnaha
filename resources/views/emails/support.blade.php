@@ -7,12 +7,13 @@
     <title>طلب دعم فني</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Tajawal", Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
             text-align: right;
             direction: rtl;
+
         }
 
         .container {
@@ -31,29 +32,36 @@
             font-size: 22px;
             font-weight: bold;
             text-align: center;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
+            border-radius: 8px 8px 0 0;
         }
 
         .info {
+            margin-top: 12px;
             font-size: 16px;
-            margin-bottom: 10px;
             display: flex;
             align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 10px;
         }
 
         .icon {
-            margin-left: 10px;
+            margin-top: 2px;
+            margin-right: 1px;
             font-size: 18px;
             color: #20776B;
         }
 
         .message {
             background: #e9ecef;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
-            margin-top: 10px;
-            font-size: 14px;
+            margin-top: 15px;
+            font-size: 15px;
+        }
+
+        .message p {
+            line-height: 1.8;
+            margin-top: 9px;
         }
 
         .footer {
@@ -65,14 +73,15 @@
     </style>
 </head>
 
-<body>
+<body style="direction: rtl">
     <div class="container">
         <div class="header">طلب دعم فني جديد</div>
 
-        <div class="info"><span class="icon">👤</span> <strong>الاسم:</strong> {{ $data['name'] }}</div>
-        <div class="info"><span class="icon">📍</span> <strong>العنوان:</strong> {{ $data['address'] }}</div>
-        <div class="info"><span class="icon">📞</span> <strong>رقم الهاتف:</strong> {{ $data['phone'] }}</div>
-        <div class="info"><span class="icon">✉️</span> <strong>الإيميل:</strong> {{ $data['email'] }}</div>
+        <div class="info"><span class="icon">👤</span><strong>الاسم:&nbsp;</strong> {{ $data['name'] }}</div>
+        <div class="info"><span class="icon">📍</span><strong>العنوان:&nbsp;</strong> {{ $data['address'] }}</div>
+        <div class="info"><span class="icon" style="direction: ltr">📞</span> <strong>رقم الهاتف:&nbsp;</strong>
+            {{ $data['phone'] }}</div>
+        <div class="info"><span class="icon">✉️</span><strong>الإيميل:&nbsp;</strong> {{ $data['email'] }}</div>
 
         <div class="message">
             <strong>📩 الرسالة:</strong>

@@ -32,8 +32,8 @@ class ServiceController extends Controller
         $services = $services->map(function ($service) {
             return [
                 'id' => $service->id,
-                'image' => base64_encode(file_get_contents(public_path($service->image_path))), // تحويل الصورة إلى Base64
                 'image_path' => $service->image_path ? url($service->image_path) : null,
+
             ];
         });
 

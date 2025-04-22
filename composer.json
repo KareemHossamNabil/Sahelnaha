@@ -12,6 +12,7 @@
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
         "predis/predis": "^2.3",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "vlucas/phpdotenv": "*"
     },
     "require-dev": {

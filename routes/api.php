@@ -10,6 +10,10 @@ use App\Http\Controllers\UsersReviewController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\TashtibaController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\ApiControllers\TechnicianAuthController;
+use App\Http\Controllers\TechnicianSupportController;
+use App\Http\Controllers\TechnicianMotivationController;
+use App\Http\Controllers\AttendanceController;
 
 
 // ✅ Routes غير محمية
@@ -61,3 +65,44 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 });
+
+
+Route::prefix('technician')->group(function () {
+    Route::post('signup', [TechnicianAuthController::class, 'signup']);
+    Route::post('verify-otp', [TechnicianAuthController::class, 'verifyOtp']);
+    Route::post('signin', [TechnicianAuthController::class, 'signin']);
+
+    Route::post('forgot-password', [TechnicianAuthController::class, 'forgotPassword']);
+    Route::post('reset-otp', [TechnicianAuthController::class, 'resetOtp']);
+    Route::post('reset-password', [TechnicianAuthController::class, 'resetPassword']);
+
+    Route::post('resend-verify-otp', [TechnicianAuthController::class, 'resendVerifyOtp']);
+    Route::post('resend-reset-otp', [TechnicianAuthController::class, 'resendResetOtp']);
+    Route::post('experience', [TechnicianAuthController::class, 'updateExperience']);
+    Route::post('work-images', [TechnicianAuthController::class, 'uploadWorkImages']);
+
+
+    // Route to start identity verification process
+    Route::post('identity/verify', [TechnicianAuthController::class, 'verifyIdentity']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Route to send a support request
+    Route::post('technician/support', [TechnicianSupportController::class, 'sendSupportRequest']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Route to get motivation events (day or week)
+    Route::get('technician/motivations', [TechnicianMotivationController::class, 'getMotivationEvents']);
+
+    // Route to participate in a motivation event
+    Route::post('technician/motivations/{eventId}/participate', [TechnicianMotivationController::class, 'participateInEvent']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/attendances/{technician_id}', [AttendanceController::class, 'index']);
+});
+
+Route::get('/scan/{id}', [AttendanceController::class, 'scanQr'])->name('scan.qr');
+
+Route::get('/technician/qr/{id}', [TechnicianAuthController::class, 'showQr'])->middleware('auth:sanctum');

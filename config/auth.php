@@ -45,6 +45,11 @@ return [
             'driver' => 'sanctum', // يجب أن يكون sanctum
             'provider' => 'users',
         ],
+
+        'technician' => [ // إضافة الحارس للفنيين
+            'driver' => 'sanctum',
+            'provider' => 'technicians',
+        ],
     ],
 
 
@@ -69,6 +74,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+
+        'technicians' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Technician::class,
         ],
 
         // 'users' => [
