@@ -112,7 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
-
+// Time Slots for Service Request 
 Route::get('/timeslots', [TimeSlotController::class, 'index']);
 
 // Service Requests
