@@ -1,6 +1,5 @@
 <?php
 
-
 use App\Http\Controllers\ProblemTypeController;
 use App\Http\Controllers\Apicontrollers\AuthController;
 use App\Http\Controllers\BookingController;
@@ -33,9 +32,6 @@ use App\Http\Controllers\UserOfferController;
 Route::post('signup', [AuthController::class, 'signup']);
 Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('signin', [AuthController::class, 'signin']);
-
-Route::post('register', [RegisterController::class, 'register']);
-Route::post('/login', [LoginController::class, 'login']);
 
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-otp', [AuthController::class, 'resetOtp']);
