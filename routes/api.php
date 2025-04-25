@@ -15,17 +15,19 @@ use App\Http\Controllers\TashtibaController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ServiceRequest\AddressController;
 use App\Http\Controllers\ServiceRequest\PaymentMethodController;
 use App\Http\Controllers\ServiceRequest\ServiceTypeController;
 use App\Http\Controllers\TechnicianOfferController;
-use App\Http\Controllers\TechnicianWorkScheduleController;
+
 use App\Http\Controllers\Apicontrollers\LoginController;
 use App\Http\Controllers\Apicontrollers\RegisterController;
-use App\Http\Controllers\ServiceRequest\ServiceRequestController;
+use App\Http\Controllers\Apicontrollers\TechnicianAuthController;
+use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\ServiceRequest\TimeSlotController;
+use App\Http\Controllers\TechnicianWorkScheduleController;
 use App\Http\Controllers\UserOfferController;
 
 // ✅ Routes غير محمية
@@ -40,8 +42,6 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/resend-verify-otp', [AuthController::class, 'resendVerifyOtp']);
 Route::post('/resend-reset-otp', [AuthController::class, 'resendResetOtp']);
 
-
-
 //Route::get('/auth/google/redirect', [SocialiteController::class, 'redirectToGoogle']);
 //Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback']);
 
@@ -49,6 +49,25 @@ Route::post('/resend-reset-otp', [AuthController::class, 'resendResetOtp']);
 //Route::get('auth/facebook/callback', [SocialiteController::class, 'handleFacebookCallback']);
 
 
+// Technician Authentication 
+Route::prefix('technician')->group(function () {
+    Route::post('signup', [TechnicianAuthController::class, 'signup']);
+    Route::post('verify-otp', [TechnicianAuthController::class, 'verifyOtp']);
+    Route::post('signin', [TechnicianAuthController::class, 'signin']);
+
+    Route::post('forgot-password', [TechnicianAuthController::class, 'forgotPassword']);
+    Route::post('reset-otp', [TechnicianAuthController::class, 'resetOtp']);
+    Route::post('reset-password', [TechnicianAuthController::class, 'resetPassword']);
+
+    Route::post('resend-verify-otp', [TechnicianAuthController::class, 'resendVerifyOtp']);
+    Route::post('resend-reset-otp', [TechnicianAuthController::class, 'resendResetOtp']);
+    Route::post('experience', [TechnicianAuthController::class, 'updateExperience']);
+    Route::post('work-images', [TechnicianAuthController::class, 'uploadWorkImages']);
+
+
+    // Route to start identity verification process
+    Route::post('identity/verify', [TechnicianAuthController::class, 'verifyIdentity']);
+});
 
 Route::post('/reviews', [UsersReviewController::class, 'store']); // API لحفظ الريفيو
 Route::get('/reviews', [UsersReviewController::class, 'index']); // API 
@@ -74,7 +93,7 @@ Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/products/category/{category}', [ProductController::class, 'filterByCategory']);
 
 // Review for product
-Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
+Route::middleware('auth:sanctum')->post('/products/{id}/reviews', [ProductReviewController::class, 'store']);
 
 
 // Cart Routes
@@ -84,52 +103,32 @@ Route::delete('/cart/remove/{productId}', [CartController::class, 'removeFromCar
 Route::delete('/cart/clear', [CartController::class, 'clearCart']);
 Route::delete('/cart/{productId}', [CartController::class, 'deleteProduct']);
 
-
-
-// Here is All Routes Related to Order Service or Describe A problem
-
-// Retireve The Service Types
-Route::prefix('service-types')->group(function () {
-    Route::get('/', [ServiceTypeController::class, 'index']);
-    Route::get('/{id}', [ServiceTypeController::class, 'show']);
-    Route::get('/category/{category}', [ServiceTypeController::class, 'getByCategory']);
-});
-
-// Payment Methods
-Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
-Route::get('/payment-methods/{id}', [PaymentMethodController::class, 'show']);
-
-//  Address About The User
+// Routes for the Service Request Process
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/address', [AddressController::class, 'show']);
-    Route::post('/address', [AddressController::class, 'store']);
-    Route::put('/address', [AddressController::class, 'update']);
-    Route::delete('/address', [AddressController::class, 'destroy']);
+    // Routes for the service request process
+    Route::post('/service-request/step-one', [ServiceRequestController::class, 'storeStepOne']);
+    Route::post('/service-request/step-two/{id}', [ServiceRequestController::class, 'storeStepTwo']);
+    Route::post('/service-request/step-three/{id}', [ServiceRequestController::class, 'storeStepThree']);
 });
 
-
-// Time Slots for Service Request 
-Route::get('/timeslots', [TimeSlotController::class, 'index']);
-
-// Service Requests
-Route::middleware('auth:sanctum')->prefix('service-requests')->group(function () {
-    Route::get('/', [ServiceRequestController::class, 'index']);
-    Route::post('/', [ServiceRequestController::class, 'store']);
-    Route::get('/{id}', [ServiceRequestController::class, 'show']);
-    Route::put('/{id}', [ServiceRequestController::class, 'update']);
-    Route::delete('/{id}', [ServiceRequestController::class, 'destroy']);
-    Route::get('/user/address', [ServiceRequestController::class, 'getUserAddress']);
-});
-
+Route::get('service-requests', [ServiceRequestController::class, 'index']);
+Route::get('service-request/{id}', [ServiceRequestController::class, 'getServiceRequestById']);
 
 // Technician Offer
 // Techincian Offers Not For Home Page
-Route::get('/technician-offers', [TechnicianOfferController::class, 'index']);
-Route::post('/technician-offers', [TechnicianOfferController::class, 'store']);
-Route::get('/technician-offers/{id}', [TechnicianOfferController::class, 'show']);
-Route::put('/technician-offers/{id}', [TechnicianOfferController::class, 'update']);
-Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
-Route::get('/technician/technician-offers', [TechnicianOfferController::class, 'getTechnicianOffers']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/technician-offers', [TechnicianOfferController::class, 'store']);
+    Route::put('/technician-offers/{id}', [TechnicianOfferController::class, 'update']);
+    Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
+    Route::get('/technician/my-offers', [TechnicianOfferController::class, 'getMyOffers']);
+});
+
+// Route::get('/technician-offers', [TechnicianOfferController::class, 'index']);
+// Route::post('/technician-offers', [TechnicianOfferController::class, 'store']);
+// Route::get('/technician-offers/{id}', [TechnicianOfferController::class, 'show']);
+// Route::put('/technician-offers/{id}', [TechnicianOfferController::class, 'update']);
+// Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
+// Route::get('/technician/technician-offers', [TechnicianOfferController::class, 'getTechnicianOffers']);
 
 // User deals with The Technician Offers
 Route::middleware(['auth:sanctum'])->prefix('user')->group(function () {
@@ -141,7 +140,6 @@ Route::middleware(['auth:sanctum'])->prefix('user')->group(function () {
     Route::get('offers/accepted', [UserOfferController::class, 'getMyAcceptedOffers']);
     Route::get('offers/completed', [UserOfferController::class, 'getMyCompletedOffers']);
 });
-
 
 // Technician Work Schedule -->> "It's Depend on the response from the User"
 Route::middleware('auth:sanctum')->group(function () {

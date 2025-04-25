@@ -16,18 +16,18 @@ class TechnicianOffer extends Model
         'min_price',
         'max_price',
         'currency',
-        'status'
+        'status',
     ];
 
-    // العلاقة مع طلب الخدمة
-    public function serviceRequest()
-    {
-        return $this->belongsTo(ServiceRequest::class);
-    }
+    // العلاقات
 
-    // العلاقة مع الفني
     public function technician()
     {
         return $this->belongsTo(Technician::class);
+    }
+
+    public function serviceRequest()
+    {
+        return $this->belongsTo(ServiceRequest::class);
     }
 }

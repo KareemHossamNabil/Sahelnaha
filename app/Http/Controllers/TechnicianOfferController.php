@@ -11,16 +11,25 @@ use Illuminate\Support\Facades\Validator;
 
 class TechnicianOfferController extends Controller
 {
+    private function getTechnicianId()
+    {
+        $technician = Auth::user();
+        if (!$technician instanceof Technician) {
+            return response()->json(['message' => 'أنت لست فنيًا مسجلاً في النظام'], 403);
+        }
+        return $technician->id;
+    }
+
     public function store(Request $request)
     {
+        $technicianId = $this->getTechnicianId();
+        if (is_a($technicianId, \Illuminate\Http\JsonResponse::class)) return $technicianId;
 
-        $technicianId = Auth::user()->technician->id;
         $validator = Validator::make($request->all(), [
             'service_request_id' => 'required|exists:service_requests,id',
             'description' => 'required|string|min:10',
             'min_price' => 'required|numeric|min:0',
             'max_price' => 'required|numeric|gt:min_price',
-            'currency' => 'sometimes|string|in:EGP,USD,EUR',
         ]);
 
         if ($validator->fails()) {
@@ -40,43 +49,33 @@ class TechnicianOfferController extends Controller
             return response()->json(['message' => 'لقد قمت بالفعل بتقديم عرض لهذا الطلب'], 400);
         }
 
-
         $offer = TechnicianOffer::create([
             'service_request_id' => $request->service_request_id,
             'technician_id' => $technicianId,
             'description' => $request->description,
             'min_price' => $request->min_price,
             'max_price' => $request->max_price,
-            'currency' => $request->currency ?? 'EGP',
+            'currency' => 'EGP',
             'status' => 'pending',
         ]);
 
-        $technician = Technician::select('id', 'name', 'profession', 'rating')->findOrFail($technicianId);
+        $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($technicianId);
 
-        $responseData = [
+        return response()->json([
             'message' => 'تم تقديم العرض بنجاح',
             'data' => $offer,
-            'technician' => [
-                'id' => $technician->id,
-                'name' => $technician->name,
-                'profession' => $technician->profession,
-                'rating' => $technician->rating
-            ]
-        ];
-
-        return response()->json($responseData, 201);
+            'technician' => $technician,
+        ], 201);
     }
-
 
     public function update(Request $request, $id)
     {
-
-        $technicianId = Auth::user()->technician->id;
+        $technicianId = $this->getTechnicianId();
+        if (is_a($technicianId, \Illuminate\Http\JsonResponse::class)) return $technicianId;
 
         $offer = TechnicianOffer::where('id', $id)
             ->where('technician_id', $technicianId)
             ->firstOrFail();
-
 
         if ($offer->status !== 'pending') {
             return response()->json(['message' => 'لا يمكن تحديث هذا العرض الآن'], 400);
@@ -86,40 +85,36 @@ class TechnicianOfferController extends Controller
             'description' => 'sometimes|required|string|min:10',
             'min_price' => 'sometimes|required|numeric|min:0',
             'max_price' => 'sometimes|required|numeric|gt:min_price',
-            'currency' => 'sometimes|string|in:EGP,USD,EUR',
+            'currency' => 'prohibited', // العملة ممنوع إرسالها
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-
         $offer->update($request->only([
             'description',
             'min_price',
             'max_price',
-            'currency'
         ]));
 
+        // تأكيد أن العملة تظل EGP
+        $offer->currency = 'EGP';
+        $offer->save();
 
-        $technician = Technician::select('id', 'name', 'profession', 'rating')->findOrFail($technicianId);
+        $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($technicianId);
 
         return response()->json([
             'message' => 'تم تحديث العرض بنجاح',
             'data' => $offer->fresh(['serviceRequest']),
-            'technician' => [
-                'id' => $technician->id,
-                'name' => $technician->name,
-                'profession' => $technician->profession,
-                'rating' => $technician->rating
-            ]
+            'technician' => $technician,
         ], 200);
     }
 
-
     public function destroy($id)
     {
-        $technicianId = Auth::user()->technician->id;
+        $technicianId = $this->getTechnicianId();
+        if (is_a($technicianId, \Illuminate\Http\JsonResponse::class)) return $technicianId;
 
         $offer = TechnicianOffer::where('id', $id)
             ->where('technician_id', $technicianId)
@@ -134,25 +129,20 @@ class TechnicianOfferController extends Controller
         return response()->json(['message' => 'تم حذف العرض بنجاح'], 200);
     }
 
-
     public function getMyOffers()
     {
-        $technicianId = Auth::user()->technician->id;
+        $technicianId = $this->getTechnicianId();
+        if (is_a($technicianId, \Illuminate\Http\JsonResponse::class)) return $technicianId;
 
         $offers = TechnicianOffer::where('technician_id', $technicianId)
             ->with(['serviceRequest', 'serviceRequest.user'])
             ->get();
 
-        $technician = Technician::select('id', 'name', 'profession', 'rating')->findOrFail($technicianId);
+        $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($technicianId);
 
         return response()->json([
-            'technician' => [
-                'id' => $technician->id,
-                'name' => $technician->name,
-                'profession' => $technician->profession,
-                'rating' => $technician->rating
-            ],
-            'offers' => $offers
+            'technician' => $technician,
+            'offers' => $offers,
         ], 200);
     }
 }

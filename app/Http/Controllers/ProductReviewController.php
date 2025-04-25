@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
-class ReviewController extends Controller
+class ProductReviewController extends Controller
 {
-    // إضافة تقييم جديد للمنتج
     public function store(Request $request, $id)
     {
-        // التحقق من وجود المنتج
         $product = Product::find($id);
         if (!$product) {
             return response()->json([
@@ -20,29 +19,34 @@ class ReviewController extends Controller
             ], 404);
         }
 
-        // التحقق من صحة البيانات المدخلة
         $request->validate([
-            'user_name' => 'required|string|max:255',
             'comment' => 'required|string',
             'rating' => 'required|numeric|min:1|max:5'
         ]);
 
-        // إضافة التقييم الجديد
-        Review::create([
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'status' => 401,
+                'msg' => 'Unauthorized. Please login first.'
+            ], 401);
+        }
+
+        $review = Review::create([
             'product_id' => $id,
-            'user_name' => $request->user_name,
+            'user_name' => $user->first_name . ' ' . $user->last_name,
             'comment' => $request->comment,
             'rating' => $request->rating
         ]);
 
-        // تحديث متوسط التقييم في جدول products
         $averageRating = Review::where('product_id', $id)->avg('rating');
         $product->update(['rating' => round($averageRating, 1)]);
 
         return response()->json([
             'status' => 201,
             'msg' => 'Review added successfully',
-            'new_rating' => round($averageRating, 1)
+            'new_rating' => round($averageRating, 1),
+            'review' => $review
         ], 201);
     }
 }
