@@ -20,6 +20,7 @@ class ServiceRequestController extends Controller
             'service_name' => 'required|string',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'is_urgent' => 'nullable|boolean'
         ]);
 
         $imagePath = null;
@@ -51,6 +52,8 @@ class ServiceRequestController extends Controller
             'date' => $request->date,
             'day' => $request->day,
             'time_range' => $request->time_range,
+            'is_urgent' => $request->is_urgent
+
         ]);
 
         return response()->json(["msg" => "Schedule added successfully"]);
@@ -66,27 +69,28 @@ class ServiceRequestController extends Controller
 
         $address = ServiceRequestAddress::create([
             'service_request_id' => $id,
-            'payment_method' => $request->payment_method, // ✅ الأول
-            'address' => $request->address,               // ✅ بعده
+            'payment_method' => $request->payment_method,
+            'address' => $request->address,
         ]);
 
         $serviceRequest = ServiceRequest::with('user')->find($id);
         $schedule = ServiceRequestSchedule::where('service_request_id', $id)->first();
 
-        $technicians = Technician::all();  // جلب جميع الفنيين
+        $technicians = Technician::all();
         foreach ($technicians as $technician) {
-            $technician->user->notify(new NewServiceRequestNotification($serviceRequest));  // إرسال الإشعار
+            $technician->notify(new NewServiceRequestNotification($serviceRequest));
         }
+
         return response()->json([
             "status" => 201,
             "message" => "تم تأكيد الحجز بنجاح",
             "service_request" => [
                 "service_request_id" => $id,
                 "user_id" => $serviceRequest->user_id,
-                "user_name" => $serviceRequest->user->first_name . ' ' . $serviceRequest->user->last_name, // دمج first_name و last_name
+                "user_name" => $serviceRequest->user->first_name . ' ' . $serviceRequest->user->last_name,
                 "service_name" => $serviceRequest->service_name,
-                "description" => $serviceRequest->description, // إضافة description
-                "images" => $serviceRequest->images,           // إضافة images
+                "description" => $serviceRequest->description,
+                "images" => $serviceRequest->images,
                 "day" => $schedule->day,
                 "date" => $schedule->date,
                 "time" => $schedule->time_range,
@@ -94,10 +98,10 @@ class ServiceRequestController extends Controller
                     "method" => $request->payment_method
                 ],
                 "address" => $request->address,
+                "is_urgent" => $serviceRequest->is_urgent,
             ]
         ]);
     }
-
 
     // إرجاع كل الـ service_requests مع البيانات المطلوبة
     public function index()
@@ -116,7 +120,7 @@ class ServiceRequestController extends Controller
                     'date' => optional($request->schedule)->date,
                     'time' => optional($request->schedule)->time_range,
                     'is_urgent' => $request->is_urgent,
-                    'payment_method' => $request->payment_method,
+                    'payment_method' => optional($request->address)->payment_method,
                     'address' => optional($request->address)->address,
                 ];
             });

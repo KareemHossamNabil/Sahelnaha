@@ -95,14 +95,6 @@ Route::get('/products/category/{category}', [ProductController::class, 'filterBy
 // Review for product
 Route::middleware('auth:sanctum')->post('/products/{id}/reviews', [ProductReviewController::class, 'store']);
 
-
-// Cart Routes
-Route::post('/cart/add/{productId}', [CartController::class, 'addToCart']);
-Route::get('/cart', [CartController::class, 'viewCart']);
-Route::delete('/cart/remove/{productId}', [CartController::class, 'removeFromCart']);
-Route::delete('/cart/clear', [CartController::class, 'clearCart']);
-Route::delete('/cart/{productId}', [CartController::class, 'deleteProduct']);
-
 // Routes for the Service Request Process
 Route::middleware('auth:sanctum')->group(function () {
     // Routes for the service request process
@@ -114,6 +106,9 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('service-requests', [ServiceRequestController::class, 'index']);
 Route::get('service-request/{id}', [ServiceRequestController::class, 'getServiceRequestById']);
 
+
+Route::middleware('auth:sanctum')->get('/technician/my-notifications', [TechnicianAuthController::class, 'getNotifications']);
+
 // Technician Offer
 // Techincian Offers Not For Home Page
 Route::middleware('auth:sanctum')->group(function () {
@@ -122,13 +117,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
     Route::get('/technician/my-offers', [TechnicianOfferController::class, 'getMyOffers']);
 });
-
-// Route::get('/technician-offers', [TechnicianOfferController::class, 'index']);
-// Route::post('/technician-offers', [TechnicianOfferController::class, 'store']);
-// Route::get('/technician-offers/{id}', [TechnicianOfferController::class, 'show']);
-// Route::put('/technician-offers/{id}', [TechnicianOfferController::class, 'update']);
-// Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
-// Route::get('/technician/technician-offers', [TechnicianOfferController::class, 'getTechnicianOffers']);
 
 // User deals with The Technician Offers
 Route::middleware(['auth:sanctum'])->prefix('user')->group(function () {

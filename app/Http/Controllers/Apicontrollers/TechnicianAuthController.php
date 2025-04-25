@@ -294,4 +294,23 @@ class TechnicianAuthController extends Controller
 
         // return response($qrCode)->header('Content-Type', 'image/svg+xml');
     }
+    public function getNotifications()
+    {
+        // الحصول على الفني المتصل
+        $technician = Auth::user();  // إذا كنت تستخدم التوثيق مع الفنيين بشكل صحيح، سيكون الـ Auth يجلب الـ Technician المتصل
+
+        // تحقق إذا كان الفني قد قام بتسجيل الدخول
+        if (!$technician) {
+            return response()->json([
+                'status' => 401,
+                'message' => 'يرجى تسجيل الدخول أولاً.',
+            ], 401);
+        }
+
+        // إرجاع الإشعارات الخاصة بالفني
+        return response()->json([
+            'status' => 200,
+            'notifications' => $technician->notifications,
+        ]);
+    }
 }
