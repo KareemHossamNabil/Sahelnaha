@@ -28,6 +28,7 @@ use App\Http\Controllers\Apicontrollers\TechnicianAuthController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\ServiceRequest\TimeSlotController;
 use App\Http\Controllers\TechnicianWorkScheduleController;
+use App\Http\Controllers\OrderServiceController;
 use App\Http\Controllers\UserOfferController;
 
 // ✅ Routes غير محمية
@@ -135,6 +136,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/technician/work-schedules/{id}', [TechnicianWorkScheduleController::class, 'show']);
 });
 
+
+Route::middleware('auth:sanctum')->post('/order-services', [OrderServiceController::class, 'store']);;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {

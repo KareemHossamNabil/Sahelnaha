@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class OrderService extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'service_id',
+        'category',
+        'date',
+        'time_slot',
+        'address',
+        'long',
+        'lat',
+        'payment_method',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
+}
