@@ -137,7 +137,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
-Route::middleware('auth:sanctum')->post('/order-services', [OrderServiceController::class, 'store']);;
+Route::middleware('auth:sanctum')->post('/order-service', [OrderServiceController::class, 'store']);;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
