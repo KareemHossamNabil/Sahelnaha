@@ -3,15 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Technician extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'technicians';
 
@@ -41,5 +39,24 @@ class Technician extends Authenticatable
     public function technicianNotifications()
     {
         return $this->hasMany(TechnicianNotification::class);
+    }
+
+    /**
+     * Get the offers made by the technician.
+     */
+    public function offers()
+    {
+        return $this->hasMany(TechnicianOffer::class);
+    }
+
+    /**
+     * Route notifications for the FCM channel.
+     *
+     * @param  \Illuminate\Notifications\Notification  $notification
+     * @return string
+     */
+    public function routeNotificationForFcm($notification)
+    {
+        return $this->device_token;
     }
 }

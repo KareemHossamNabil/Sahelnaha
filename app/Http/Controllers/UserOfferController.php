@@ -7,10 +7,12 @@ use App\Models\OrderService;
 use App\Models\TechnicianOffer;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Notifications\OfferAcceptedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class UserOfferController extends Controller
 {
@@ -116,63 +118,78 @@ class UserOfferController extends Controller
      */
     public function acceptOffer($offerId)
     {
-        $offer = TechnicianOffer::findOrFail($offerId);
-        $requestData = $this->getRequestObjectFromOffer($offer);
+        try {
+            // Start a database transaction
+            DB::beginTransaction();
 
-        if (!$requestData) {
-            return response()->json(['message' => 'لم يتم العثور على الطلب المرتبط بهذا العرض'], 404);
-        }
+            $offer = TechnicianOffer::findOrFail($offerId);
+            $requestData = $this->getRequestObjectFromOffer($offer);
 
-        $serviceObject = $requestData['object'];
-        $requestType = $requestData['type'];
-        $idField = $requestData['id_field'];
+            if (!$requestData) {
+                return response()->json(['message' => 'لم يتم العثور على الطلب المرتبط بهذا العرض'], 404);
+            }
 
-        if (!$this->userOwnsRequest($serviceObject)) {
-            return response()->json(['message' => 'غير مصرح لك بهذه العملية'], 403);
-        }
+            $serviceObject = $requestData['object'];
+            $requestType = $requestData['type'];
+            $idField = $requestData['id_field'];
 
-        if ($serviceObject->status !== 'pending') {
-            return response()->json(['message' => 'تم بالفعل اختيار عرض لهذا الطلب'], 400);
-        }
+            if (!$this->userOwnsRequest($serviceObject)) {
+                return response()->json(['message' => 'غير مصرح لك بهذه العملية'], 403);
+            }
 
-        if ($offer->status !== 'pending') {
-            return response()->json(['message' => 'لا يمكن قبول هذا العرض في الوقت الحالي'], 400);
-        }
+            if ($serviceObject->status !== 'pending') {
+                return response()->json(['message' => 'تم بالفعل اختيار عرض لهذا الطلب'], 400);
+            }
 
-        $offer->update([
-            'status' => 'in_progress',
-            'updated_at' => now(),
-        ]);
+            if ($offer->status !== 'pending') {
+                return response()->json(['message' => 'لا يمكن قبول هذا العرض في الوقت الحالي'], 400);
+            }
 
-        $serviceObject->update([
-            'status' => 'in_progress',
-            'updated_at' => now(),
-        ]);
-
-        // Reject all other offers for this request
-        TechnicianOffer::where($idField, $serviceObject->id)
-            ->where('id', '!=', $offerId)
-            ->update([
-                'status' => 'rejected',
+            $offer->update([
+                'status' => 'in_progress',
                 'updated_at' => now(),
             ]);
 
-        // Get the technician to notify
-        $technician = $offer->technician;
+            $serviceObject->update([
+                'status' => 'in_progress',
+                'updated_at' => now(),
+            ]);
 
-        // Notify the technician about the accepted offer
-        if ($technician) {
-            // You can create a notification class for this
-            // $technician->notify(new OfferAcceptedNotification($offer, Auth::user(), $serviceObject, $requestType));
+            // Reject all other offers for this request
+            TechnicianOffer::where($idField, $serviceObject->id)
+                ->where('id', '!=', $offerId)
+                ->update([
+                    'status' => 'rejected',
+                    'updated_at' => now(),
+                ]);
 
-            // Dispatch event for real-time updates if needed
-            event(new TechnicianOfferEvent('accepted', $offer, $technician, $serviceObject, $requestType));
+            // Get the technician to notify
+            $technician = $offer->technician;
+
+            // Notify the technician about the accepted offer
+            if ($technician) {
+                $technician->notify(new OfferAcceptedNotification($offer, Auth::user(), $serviceObject, $requestType));
+
+                // Dispatch event for real-time updates if needed
+                event(new TechnicianOfferEvent('accepted', $offer, $technician, $serviceObject, $requestType));
+            }
+
+            // Commit the transaction
+            DB::commit();
+
+            return response()->json([
+                'message' => 'تم قبول العرض بنجاح',
+                'offer' => $offer->load('technician')
+            ], 200);
+        } catch (\Exception $e) {
+            // Rollback the transaction in case of error
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'حدث خطأ أثناء معالجة طلبك',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'تم قبول العرض بنجاح',
-            'offer' => $offer->load('technician')
-        ], 200);
     }
 
     public function rejectOffer($offerId)
