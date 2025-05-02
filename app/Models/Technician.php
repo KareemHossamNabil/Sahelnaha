@@ -37,4 +37,9 @@ class Technician extends Authenticatable
         'register_otp',
         'reset_otp',
     ];
+
+    public function technicianNotifications()
+    {
+        return $this->hasMany(TechnicianNotification::class);
+    }
 }

@@ -97,35 +97,48 @@ Route::get('/products/category/{category}', [ProductController::class, 'filterBy
 Route::middleware('auth:sanctum')->post('/products/{id}/reviews', [ProductReviewController::class, 'store']);
 
 // Routes for the Service Request Process
-Route::middleware('auth:sanctum')->group(function () {
-    // Routes for the service request process
-    Route::post('/service-request/step-one', [ServiceRequestController::class, 'storeStepOne']);
-    Route::post('/service-request/step-two/{id}', [ServiceRequestController::class, 'storeStepTwo']);
-    Route::post('/service-request/step-three/{id}', [ServiceRequestController::class, 'storeStepThree']);
-});
 
 Route::get('service-requests', [ServiceRequestController::class, 'index']);
 Route::get('service-request/{id}', [ServiceRequestController::class, 'getServiceRequestById']);
 
-
+// Technician Notifications
 Route::middleware('auth:sanctum')->get('/technician/my-notifications', [TechnicianAuthController::class, 'getNotifications']);
 
 // Technician Offer
 // Techincian Offers Not For Home Page
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/technician-offers', [TechnicianOfferController::class, 'index']);
     Route::post('/technician-offers', [TechnicianOfferController::class, 'store']);
     Route::put('/technician-offers/{id}', [TechnicianOfferController::class, 'update']);
+    Route::get('/technician-offers/{id}', [TechnicianOfferController::class, 'show']);
     Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
-    Route::get('/technician/my-offers', [TechnicianOfferController::class, 'getMyOffers']);
 });
+
+// Get technician's own offers
+Route::middleware('auth:sanctum')->get('/technician/my-offers', [TechnicianOfferController::class, 'getMyOffers']);
+
+// Get technician offers by status
+Route::middleware('auth:sanctum')->get('/technician/offers/{status}', [TechnicianOfferController::class, 'getOffersByStatus']);
 
 // User deals with The Technician Offers
 Route::middleware(['auth:sanctum'])->prefix('user')->group(function () {
-
+    // Get offers for service requests and order services
     Route::get('service-requests/{serviceRequestId}/offers', [UserOfferController::class, 'getOffersByServiceRequest']);
+    Route::get('order-services/{orderServiceId}/offers', [UserOfferController::class, 'getOffersByOrderService']);
+
+    // Get all offers for the user
+    Route::get('offers', [UserOfferController::class, 'getAllOffers']);
+
+    // Get offers by status
+    Route::get('offers/status/{status}', [UserOfferController::class, 'getOffersByStatus']);
+
+    // Actions on offers
     Route::post('offers/{offerId}/accept', [UserOfferController::class, 'acceptOffer']);
+    Route::post('offers/{offerId}/reject', [UserOfferController::class, 'rejectOffer']);
     Route::post('offers/{offerId}/cancel', [UserOfferController::class, 'cancelAcceptedOffer']);
     Route::post('offers/{offerId}/confirm', [UserOfferController::class, 'confirmOffer']);
+
+    // Get user's offers by specific statuses (convenience methods)
     Route::get('offers/accepted', [UserOfferController::class, 'getMyAcceptedOffers']);
     Route::get('offers/completed', [UserOfferController::class, 'getMyCompletedOffers']);
 });
@@ -136,11 +149,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/technician/work-schedules/{id}', [TechnicianWorkScheduleController::class, 'show']);
 });
 
-
-Route::middleware('auth:sanctum')->post('/order-service', [OrderServiceController::class, 'store']);;
+// Order Service
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/order-service', [OrderServiceController::class, 'store']);
+    Route::get('/order-services', [OrderServiceController::class, 'index']);
+    Route::post('/order-services/{id}/complete', [OrderServiceController::class, 'completeOrder']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+});
+
+// Service Request Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/service-requests', [ServiceRequestController::class, 'store']);
+    Route::get('/service-requests', [ServiceRequestController::class, 'index']);
 });

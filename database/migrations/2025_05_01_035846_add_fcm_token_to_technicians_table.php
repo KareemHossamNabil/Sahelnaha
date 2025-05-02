@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payment_methods', function (Blueprint $table) {
-            $table->id();
-            $table->string('type'); // 'card', 'cash', etc.
-            $table->string('card_number')->nullable();
-            $table->boolean('is_default')->default(false);
-            $table->timestamps();
+        Schema::table('technicians', function (Blueprint $table) {
+            $table->string('fcm_token')->nullable();
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payment_methods');
+        Schema::table('technicians', function (Blueprint $table) {
+            $table->dropColumn('fcm_token');
+        });
     }
 };

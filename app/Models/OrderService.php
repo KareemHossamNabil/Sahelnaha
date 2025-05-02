@@ -13,6 +13,7 @@ class OrderService extends Model
         'user_id',
         'service_id',
         'category',
+        'is_urgent',
         'date',
         'time_slot',
         'address',

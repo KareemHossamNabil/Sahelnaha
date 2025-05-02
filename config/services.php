@@ -50,5 +50,7 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
 
-
+    'firebase' => [
+        'credentials' => storage_path('app/firebase/sahelnaha-notifications-firebase.json'),
+    ],
 ];

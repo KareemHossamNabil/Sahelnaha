@@ -12,8 +12,16 @@ class ServiceRequest extends Model
         'description',
         'images',
         'is_urgent',
-        'payment_method'
+        'time_slot',
+        'date',
+        'day',
+        'payment_method',
+        'address',
+        'longitude',
+        'latitude',
+
     ];
+
 
     public function user()
     {

@@ -13,8 +13,19 @@ class CreateServiceRequestsTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->string('service_name');
             $table->text('description')->nullable();
-            $table->string('images')->nullable();
+            $table->json('images')->nullable();
+            $table->boolean('is_urgent');
+            $table->string('payment_method');
+            $table->string('address');
+            $table->decimal('longitude', 10, 7);
+            $table->decimal('latitude', 10, 7);
+            $table->date('date');
+            $table->string('day');
+            $table->string('time_slot');
             $table->timestamps();
+
+            // Foreign key constraint
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

@@ -9,6 +9,9 @@ class Review extends Model
 {
     use HasFactory;
 
+    // 👇 إضافة اسم الجدول الجديد صراحة
+    protected $table = 'products_reviews';
+
     protected $fillable = ['product_id', 'user_name', 'comment', 'rating'];
 
     public function product()
