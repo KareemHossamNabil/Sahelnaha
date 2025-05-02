@@ -29,9 +29,14 @@ class OfferUpdatedNotification extends Notification implements ShouldQueue
         $this->requestType = $requestType;
     }
 
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @return array<int, string>
+     */
     public function via($notifiable)
     {
-        return ['database', 'fcm'];
+        return ['database', 'fcm', 'user-database'];
     }
 
     public function toDatabase($notifiable)
@@ -55,7 +60,7 @@ class OfferUpdatedNotification extends Notification implements ShouldQueue
     public function toFcm($notifiable)
     {
         $data = $this->toDatabase($notifiable);
-        
+
         return [
             'title' => $data['title'],
             'body' => $data['body'],
@@ -81,6 +86,27 @@ class OfferUpdatedNotification extends Notification implements ShouldQueue
                     ]
                 ]
             ]
+        ];
+    }
+
+    /**
+     * Get the custom database representation of the notification.
+     */
+    public function toUserDatabase($notifiable)
+    {
+        return [
+            'title' => 'تم تحديث العرض',
+            'body' => "قام {$this->technician->first_name} {$this->technician->last_name} بتحديث العرض على طلبك",
+            'offer_id' => $this->offer->id,
+            'service_request_id' => $this->requestType === 'service_request' ? $this->serviceObject->id : null,
+            'order_service_id' => $this->requestType === 'order_service' ? $this->serviceObject->id : null,
+            'technician_id' => $this->technician->id,
+            'technician_name' => "{$this->technician->first_name} {$this->technician->last_name}",
+            'min_price' => $this->offer->min_price,
+            'max_price' => $this->offer->max_price,
+            'currency' => $this->offer->currency,
+            'type' => 'offer_updated',
+            'created_at' => now()->toDateTimeString(),
         ];
     }
 }

@@ -47,4 +47,20 @@ class User extends Authenticatable
     {
         $this->attributes['password'] = Hash::make($value);
     }
+
+    /**
+     * Get the user's custom notifications.
+     */
+    public function userNotifications()
+    {
+        return $this->hasMany(UserNotification::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the user's unread custom notifications.
+     */
+    public function unreadUserNotifications()
+    {
+        return $this->userNotifications()->whereNull('read_at');
+    }
 }

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Notification;
+use App\Channels\UserDatabaseChannel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register the custom notification channel
+        Notification::extend('user-database', function ($app) {
+            return new UserDatabaseChannel();
+        });
     }
 }

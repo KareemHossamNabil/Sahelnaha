@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\TechnicianOfferEvent;
+use App\Models\OrderService;
 use App\Models\TechnicianOffer;
 use App\Models\ServiceRequest;
 use App\Models\User;
@@ -12,6 +14,60 @@ use Illuminate\Support\Facades\Storage;
 
 class UserOfferController extends Controller
 {
+    /**
+     * Get the request object (ServiceRequest or OrderService) based on the offer
+     * 
+     * @param TechnicianOffer $offer
+     * @return array|null
+     */
+    private function getRequestObjectFromOffer(TechnicianOffer $offer)
+    {
+        $requestType = $offer->request_type ?? 'service_request';
+
+        if ($requestType === 'service_request' && $offer->service_request_id) {
+            $serviceRequest = ServiceRequest::find($offer->service_request_id);
+            if ($serviceRequest) {
+                return [
+                    'object' => $serviceRequest,
+                    'type' => 'service_request',
+                    'id_field' => 'service_request_id',
+                    'id_value' => $offer->service_request_id
+                ];
+            }
+        }
+
+        if ($requestType === 'order_service' && $offer->order_service_id) {
+            $orderService = OrderService::find($offer->order_service_id);
+            if ($orderService) {
+                return [
+                    'object' => $orderService,
+                    'type' => 'order_service',
+                    'id_field' => 'order_service_id',
+                    'id_value' => $offer->order_service_id
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if the authenticated user owns the service request or order
+     * 
+     * @param mixed $serviceObject
+     * @return bool
+     */
+    private function userOwnsRequest($serviceObject)
+    {
+        return $serviceObject && $serviceObject->user_id === Auth::id();
+    }
+
+    /**
+     * Get offers for a specific service request
+     * 
+     * @param int $serviceRequestId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getOffersByServiceRequest($serviceRequestId)
     {
         $userId = Auth::id();
@@ -29,17 +85,54 @@ class UserOfferController extends Controller
         ], 200);
     }
 
+    /**
+     * Get offers for a specific order service
+     * 
+     * @param int $orderServiceId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getOffersByOrderService($orderServiceId)
+    {
+        $userId = Auth::id();
+        $orderService = OrderService::where('id', $orderServiceId)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        $offers = TechnicianOffer::where('order_service_id', $orderServiceId)
+            ->with(['technician:id,first_name,last_name,experience_text'])
+            ->get();
+
+        return response()->json([
+            'order_service' => $orderService,
+            'offers' => $offers
+        ], 200);
+    }
+
+    /**
+     * Accept an offer
+     * 
+     * @param int $offerId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function acceptOffer($offerId)
     {
         $offer = TechnicianOffer::findOrFail($offerId);
-        $serviceRequest = ServiceRequest::findOrFail($offer->service_request_id);
+        $requestData = $this->getRequestObjectFromOffer($offer);
 
-        if ($serviceRequest->user_id !== Auth::id()) {
+        if (!$requestData) {
+            return response()->json(['message' => 'لم يتم العثور على الطلب المرتبط بهذا العرض'], 404);
+        }
+
+        $serviceObject = $requestData['object'];
+        $requestType = $requestData['type'];
+        $idField = $requestData['id_field'];
+
+        if (!$this->userOwnsRequest($serviceObject)) {
             return response()->json(['message' => 'غير مصرح لك بهذه العملية'], 403);
         }
 
-        if ($serviceRequest->status !== 'pending') {
-            return response()->json(['message' => 'تم بالفعل اختيار عرض لهذه الخدمة'], 400);
+        if ($serviceObject->status !== 'pending') {
+            return response()->json(['message' => 'تم بالفعل اختيار عرض لهذا الطلب'], 400);
         }
 
         if ($offer->status !== 'pending') {
@@ -51,17 +144,30 @@ class UserOfferController extends Controller
             'updated_at' => now(),
         ]);
 
-        $serviceRequest->update([
+        $serviceObject->update([
             'status' => 'in_progress',
             'updated_at' => now(),
         ]);
 
-        TechnicianOffer::where('service_request_id', $serviceRequest->id)
+        // Reject all other offers for this request
+        TechnicianOffer::where($idField, $serviceObject->id)
             ->where('id', '!=', $offerId)
             ->update([
                 'status' => 'rejected',
                 'updated_at' => now(),
             ]);
+
+        // Get the technician to notify
+        $technician = $offer->technician;
+
+        // Notify the technician about the accepted offer
+        if ($technician) {
+            // You can create a notification class for this
+            // $technician->notify(new OfferAcceptedNotification($offer, Auth::user(), $serviceObject, $requestType));
+
+            // Dispatch event for real-time updates if needed
+            event(new TechnicianOfferEvent('accepted', $offer, $technician, $serviceObject, $requestType));
+        }
 
         return response()->json([
             'message' => 'تم قبول العرض بنجاح',
@@ -79,7 +185,7 @@ class UserOfferController extends Controller
         }
 
         if ($offer->status !== 'pending') {
-            return response()->json(['message' => 'لا يمكن رفض هذا العرض حالياً'], 400);
+            return response()->json(['message' => 'لا يمكن رفض هذا العرض حال'], 400);
         }
 
         $offer->update([
@@ -215,6 +321,144 @@ class UserOfferController extends Controller
 
         return response()->json([
             'completed_offers' => $offers
+        ], 200);
+    }
+
+    /**
+     * Get all offers for the authenticated user
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAllOffers()
+    {
+        $userId = Auth::id();
+
+        // Get all service requests owned by the user
+        $serviceRequests = ServiceRequest::where('user_id', $userId)->pluck('id');
+
+        // Get all order services owned by the user
+        $orderServices = OrderService::where('user_id', $userId)->pluck('id');
+
+        // Get offers for service requests
+        $serviceRequestOffers = TechnicianOffer::whereIn('service_request_id', $serviceRequests)
+            ->with(['technician:id,first_name,last_name,experience_text', 'serviceRequest'])
+            ->get();
+
+        // Get offers for order services
+        $orderServiceOffers = TechnicianOffer::whereIn('order_service_id', $orderServices)
+            ->with(['technician:id,first_name,last_name,experience_text', 'orderService'])
+            ->get();
+
+        // Combine and format the offers
+        $allOffers = $serviceRequestOffers->concat($orderServiceOffers)->map(function ($offer) {
+            $requestType = $offer->request_type ?? 'service_request';
+            $requestObject = null;
+
+            if ($requestType === 'service_request' && $offer->serviceRequest) {
+                $requestObject = $offer->serviceRequest;
+            } else if ($requestType === 'order_service' && $offer->orderService) {
+                $requestObject = $offer->orderService;
+            }
+
+            return [
+                'id' => $offer->id,
+                'technician' => $offer->technician,
+                'description' => $offer->description,
+                'min_price' => $offer->min_price,
+                'max_price' => $offer->max_price,
+                'status' => $offer->status,
+                'request_type' => $requestType,
+                'request' => $requestObject,
+                'created_at' => $offer->created_at,
+                'updated_at' => $offer->updated_at,
+            ];
+        });
+
+        // Group offers by status
+        $groupedOffers = $allOffers->groupBy('status');
+
+        // Count offers by status
+        $offerCounts = [
+            'total' => $allOffers->count(),
+            'pending' => $groupedOffers->get('pending', collect())->count(),
+            'in_progress' => $groupedOffers->get('in_progress', collect())->count(),
+            'completed' => $groupedOffers->get('completed', collect())->count(),
+            'rejected' => $groupedOffers->get('rejected', collect())->count(),
+            'cancelled' => $groupedOffers->get('cancelled', collect())->count(),
+        ];
+
+        return response()->json([
+            'offers' => $allOffers,
+            'grouped_offers' => $groupedOffers,
+            'counts' => $offerCounts
+        ], 200);
+    }
+
+    /**
+     * Get offers by status for the authenticated user
+     * 
+     * @param string $status
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getOffersByStatus($status)
+    {
+        $userId = Auth::id();
+
+        // Validate status
+        $validStatuses = ['pending', 'in_progress', 'completed', 'rejected', 'cancelled'];
+        if (!in_array($status, $validStatuses)) {
+            return response()->json([
+                'message' => 'Invalid status. Valid statuses are: ' . implode(', ', $validStatuses)
+            ], 400);
+        }
+
+        // Get all service requests owned by the user
+        $serviceRequests = ServiceRequest::where('user_id', $userId)->pluck('id');
+
+        // Get all order services owned by the user
+        $orderServices = OrderService::where('user_id', $userId)->pluck('id');
+
+        // Get offers for service requests with the specified status
+        $serviceRequestOffers = TechnicianOffer::whereIn('service_request_id', $serviceRequests)
+            ->where('status', $status)
+            ->with(['technician:id,first_name,last_name,experience_text', 'serviceRequest'])
+            ->get();
+
+        // Get offers for order services with the specified status
+        $orderServiceOffers = TechnicianOffer::whereIn('order_service_id', $orderServices)
+            ->where('status', $status)
+            ->with(['technician:id,first_name,last_name,experience_text', 'orderService'])
+            ->get();
+
+        // Combine and format the offers
+        $offers = $serviceRequestOffers->concat($orderServiceOffers)->map(function ($offer) {
+            $requestType = $offer->request_type ?? 'service_request';
+            $requestObject = null;
+
+            if ($requestType === 'service_request' && $offer->serviceRequest) {
+                $requestObject = $offer->serviceRequest;
+            } else if ($requestType === 'order_service' && $offer->orderService) {
+                $requestObject = $offer->orderService;
+            }
+
+            return [
+                'id' => $offer->id,
+                'technician' => $offer->technician,
+                'description' => $offer->description,
+                'min_price' => $offer->min_price,
+                'max_price' => $offer->max_price,
+                'status' => $offer->status,
+                'request_type' => $requestType,
+                'request' => $requestObject,
+                'created_at' => $offer->created_at,
+                'updated_at' => $offer->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'status' => $status,
+            'count' => $offers->count(),
+            'offers' => $offers
         ], 200);
     }
 }
