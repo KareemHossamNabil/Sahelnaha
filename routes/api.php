@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ProblemTypeController;
 use App\Http\Controllers\Apicontrollers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\SocialiteController;
@@ -10,23 +9,14 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\UsersReviewController;
 use App\Http\Controllers\OfferController;
-use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TashtibaController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductReviewController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\ServiceRequest\AddressController;
-use App\Http\Controllers\ServiceRequest\PaymentMethodController;
-use App\Http\Controllers\ServiceRequest\ServiceTypeController;
 use App\Http\Controllers\TechnicianOfferController;
-
-use App\Http\Controllers\Apicontrollers\LoginController;
-use App\Http\Controllers\Apicontrollers\RegisterController;
 use App\Http\Controllers\Apicontrollers\TechnicianAuthController;
 use App\Http\Controllers\ServiceRequestController;
-use App\Http\Controllers\ServiceRequest\TimeSlotController;
+
 use App\Http\Controllers\TechnicianWorkScheduleController;
 use App\Http\Controllers\OrderServiceController;
 use App\Http\Controllers\UserOfferController;
@@ -164,6 +154,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Service Request Routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/service-requests', [ServiceRequestController::class, 'store']);
+    Route::post('/service-request', [ServiceRequestController::class, 'store']);
     Route::get('/service-requests', [ServiceRequestController::class, 'index']);
 });
