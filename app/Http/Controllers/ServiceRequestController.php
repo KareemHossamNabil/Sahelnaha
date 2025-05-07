@@ -8,6 +8,7 @@ use App\Models\Technician;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use App\Notifications\ServiceRequestNotification;
+use ServiceRequestNotification as GlobalServiceRequestNotification;
 
 class ServiceRequestController extends Controller
 {

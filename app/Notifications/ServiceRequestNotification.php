@@ -1,18 +1,13 @@
 <?php
-// app/Notifications/TechnicianServiceRequestNotification.php
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+// app/Notifications/TechnicianServiceRequestNotification.php
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\DatabaseMessage;
 
-class ServiceRequestNotification extends Notification implements ShouldQueue
+class ServiceRequestNotification extends Notification
 {
-    use Queueable;
-
     protected $serviceRequest;
 
     public function __construct($serviceRequest)
@@ -22,47 +17,16 @@ class ServiceRequestNotification extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['database', 'fcm']; // Using custom FCM channel
+        return ['database']; // <-- استخدم قاعدة البيانات فقط
     }
 
     public function toDatabase($notifiable)
     {
         return [
-            'title' => 'New Service Request',
-            'body' => "New {$this->serviceRequest->service_name} request available",
-            'request_id' => $this->serviceRequest->id,
-            'type' => 'service_request',
-            'created_at' => now()->toDateTimeString(),
-        ];
-    }
-
-    public function toFcm($notifiable)
-    {
-        return [
-            'title' => 'New Service Request',
-            'body' => "New {$this->serviceRequest->service_name} request available",
-            'data' => [
-                'type' => 'service_request',
-                'request_id' => $this->serviceRequest->id,
-                'latitude' => $this->serviceRequest->latitude,
-                'longitude' => $this->serviceRequest->longitude,
-                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-            ],
-            'android' => [
-                'priority' => 'high',
-                'notification' => [
-                    'sound' => 'default',
-                    'color' => '#FF0000'
-                ]
-            ],
-            'apns' => [
-                'payload' => [
-                    'aps' => [
-                        'sound' => 'default',
-                        'badge' => 1,
-                    ]
-                ]
-            ]
+            'service_request_id' => $this->serviceRequest->id,
+            'service_name' => $this->serviceRequest->service_name,
+            'user_id' => $this->serviceRequest->user_id,
+            'timestamp' => now(),
         ];
     }
 }

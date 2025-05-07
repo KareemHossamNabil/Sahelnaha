@@ -73,10 +73,8 @@ Route::get('/tashtiba', [TashtibaController::class, 'index']);
 Route::get('/offers', [OfferController::class, 'index']);
 Route::get('/offers/{id}', [OfferController::class, 'show']);
 
-
 Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
 Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
-
 
 // Products
 Route::get('/products', [ProductController::class, 'index']);
@@ -87,7 +85,6 @@ Route::get('/products/category/{category}', [ProductController::class, 'filterBy
 Route::middleware('auth:sanctum')->post('/products/{id}/reviews', [ProductReviewController::class, 'store']);
 
 // Routes for the Service Request Process
-
 Route::get('service-requests', [ServiceRequestController::class, 'index']);
 Route::get('service-request/{id}', [ServiceRequestController::class, 'getServiceRequestById']);
 
@@ -98,7 +95,7 @@ Route::middleware('auth:sanctum')->get('/technician/my-notifications', [Technici
 // Techincian Offers Not For Home Page
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/technician-offers', [TechnicianOfferController::class, 'index']);
-    Route::post('/technician-offers', [TechnicianOfferController::class, 'store']);
+    Route::post('/technician-offer', [TechnicianOfferController::class, 'store']);
     Route::put('/technician-offers/{id}', [TechnicianOfferController::class, 'update']);
     Route::get('/technician-offers/{id}', [TechnicianOfferController::class, 'show']);
     Route::delete('/technician-offers/{id}', [TechnicianOfferController::class, 'destroy']);
