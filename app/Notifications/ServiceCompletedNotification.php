@@ -8,7 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\TechnicianOffer;
 
-class OfferAcceptedNotification extends Notification implements ShouldQueue
+class ServiceCompletedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -45,13 +45,14 @@ class OfferAcceptedNotification extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject('تم قبول عرضك')
-            ->line('تم قبول عرضك للخدمة.')
-            ->line('تفاصيل العرض:')
-            ->line('الوصف: ' . $this->offer->description)
-            ->line('السعر: ' . $this->offer->min_price . ' - ' . $this->offer->max_price . ' ' . $this->offer->currency)
+            ->subject('تم إكمال الخدمة')
+            ->line('تم إكمال الخدمة وتقييمها من قبل العميل.')
+            ->line('التقييم: ' . $this->offer->rating . '/5')
+            ->when($this->offer->comment, function ($message) {
+                return $message->line('التعليق: ' . $this->offer->comment);
+            })
             ->action('عرض التفاصيل', url('/offers/' . $this->offer->id))
-            ->line('شكراً لاستخدامك منصتنا!');
+            ->line('شكراً لخدمتك المميزة!');
     }
 
     /**
@@ -64,8 +65,9 @@ class OfferAcceptedNotification extends Notification implements ShouldQueue
     {
         return [
             'offer_id' => $this->offer->id,
-            'message' => 'تم قبول عرضك للخدمة',
-            'type' => 'offer_accepted'
+            'message' => 'تم إكمال الخدمة وتقييمها',
+            'rating' => $this->offer->rating,
+            'type' => 'service_completed'
         ];
     }
 }

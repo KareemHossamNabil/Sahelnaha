@@ -26,6 +26,14 @@ class TechnicianOffer extends Model
         'cancellation_reason',
     ];
 
+    protected $casts = [
+        'status' => 'string',
+        'min_price' => 'decimal:2',
+        'max_price' => 'decimal:2',
+        'final_price' => 'decimal:2',
+        'rating' => 'integer',
+    ];
+
     /**
      * Get the technician that made the offer.
      */

@@ -235,4 +235,31 @@ class AuthController extends Controller
 
         return response()->json(["success" => true, "message" => "Reset password OTP resent successfully."]);
     }
+
+
+    public function updateFcmToken(Request $request)
+   {
+        $request->validate([
+            'fcm_token' => 'required|string',
+        ]);
+
+        $request->user()->update([
+            'fcm_token' => $request->fcm_token,
+        ]);
+
+        return response()->json(['message' => 'تم تحديث FCM Token بنجاح']);
+    }
+
+    public function getNotifications()
+    {
+        
+        $user = Auth::user();
+        $user_notifications = $user->user_notifications()->latest()->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $notifications
+        ]);
+    }
+   
 }

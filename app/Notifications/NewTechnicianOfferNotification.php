@@ -2,107 +2,43 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
-use App\Models\TechnicianOffer;
-use App\Models\Technician;
+use Illuminate\Notifications\Messages\DatabaseMessage;
 
-class NewTechnicianOfferNotification extends Notification implements ShouldQueue
+class NewTechnicianOfferNotification extends Notification
 {
-    use Queueable;
+    public function __construct(
+        public $offerId,
+        public $serviceRequestId,
+        public $description,
+        public $technicianId,
+        public $technicianName,
+        public $minPrice,
+        public $maxPrice,
+    ) {}
 
-    protected $offer;
-    protected $technician;
-    protected $serviceObject;
-    protected $requestType;
-
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct(TechnicianOffer $offer, Technician $technician, $serviceObject, $requestType)
-    {
-        $this->offer = $offer;
-        $this->technician = $technician;
-        $this->serviceObject = $serviceObject;
-        $this->requestType = $requestType;
-
-        // Ensure notification is sent after database transaction is committed
-        $this->afterCommit();
-    }
-
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via($notifiable)
     {
-        return ['database', 'fcm'];
+        return ['database'];
     }
 
-    /**
-     * Get the database representation of the notification.
-     */
     public function toDatabase($notifiable)
     {
         return [
             'title' => 'عرض جديد',
-            'body' => "قام {$this->technician->first_name} {$this->technician->last_name} بتقديم عرض على طلبك",
-            'offer_id' => $this->offer->id,
-            'service_request_id' => $this->requestType === 'service_request' ? $this->serviceObject->id : null,
-            'order_service_id' => $this->requestType === 'order_service' ? $this->serviceObject->id : null,
-            'technician_id' => $this->technician->id,
-            'technician_name' => "{$this->technician->first_name} {$this->technician->last_name}",
-            'min_price' => $this->offer->min_price,
-            'max_price' => $this->offer->max_price,
-            'currency' => $this->offer->currency,
+            'body' => sprintf('قام %s بتقديم عرض على طلبك', $this->technicianName),
             'type' => 'new_offer',
-            'created_at' => now()->toDateTimeString(),
-        ];
-    }
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray($notifiable)
-    {
-        return $this->toDatabase($notifiable);
-    }
-
-    /**
-     * Get the FCM representation of the notification.
-     */
-    public function toFcm($notifiable)
-    {
-        $data = $this->toDatabase($notifiable);
-
-        return [
-            'title' => $data['title'],
-            'body' => $data['body'],
             'data' => [
-                'offer_id' => (string) $data['offer_id'],
-                'service_request_id' => $this->requestType === 'service_request' ? (string) $data['service_request_id'] : null,
-                'order_service_id' => $this->requestType === 'order_service' ? (string) $data['order_service_id'] : null,
-                'type' => 'new_offer',
-                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-            ],
-            'android' => [
-                'priority' => 'high',
-                'notification' => [
-                    'sound' => 'default',
-                    'color' => '#0066CC'
-                ]
-            ],
-            'apns' => [
-                'payload' => [
-                    'aps' => [
-                        'sound' => 'default',
-                        'badge' => 1,
-                    ]
-                ]
+                'offer_id' => $this->offerId,
+                'service_request_id' => $this->serviceRequestId,
+                'order_service_id' => null,
+                'description' => $this->description,
+                'technician_id' => $this->technicianId,
+                'technician_name' => $this->technicianName,
+                'min_price' => $this->minPrice,
+                'max_price' => $this->maxPrice,
+                'currency' => 'جنيه مصري',
+                'created_at' => now()->toDateTimeString(),
             ]
         ];
     }

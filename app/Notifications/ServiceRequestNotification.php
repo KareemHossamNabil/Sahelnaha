@@ -2,9 +2,7 @@
 
 namespace App\Notifications;
 
-// app/Notifications/TechnicianServiceRequestNotification.php
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\DatabaseMessage;
 
 class ServiceRequestNotification extends Notification
 {
@@ -17,16 +15,25 @@ class ServiceRequestNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['database']; // <-- استخدم قاعدة البيانات فقط
+        return ['database'];  // تخزين الإشعار في قاعدة البيانات
     }
 
     public function toDatabase($notifiable)
     {
         return [
+            'title' => 'طلب خدمة جديد',
+            'body' => 'تم نشر طلب خدمة جديد بالقرب منك. تحقق من التفاصيل الآن.',
             'service_request_id' => $this->serviceRequest->id,
             'service_name' => $this->serviceRequest->service_name,
             'user_id' => $this->serviceRequest->user_id,
-            'timestamp' => now(),
+            'address' => $this->serviceRequest->address,
+            'longitude' => $this->serviceRequest->longitude,
+            'latitude' => $this->serviceRequest->latitude,
+            'date' => $this->serviceRequest->date,
+            'time_slot' => $this->serviceRequest->time_slot,
+            'is_urgent' => $this->serviceRequest->is_urgent,
+            'type' => 'new_service_request', // نوع الإشعار
+            'created_at' => now()->toDateTimeString(), // التاريخ والوقت الحالي
         ];
     }
 }

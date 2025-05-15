@@ -6,9 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\ServiceRequest;
 use App\Models\Technician;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 use App\Notifications\ServiceRequestNotification;
-use ServiceRequestNotification as GlobalServiceRequestNotification;
 
 class ServiceRequestController extends Controller
 {
@@ -26,16 +24,10 @@ class ServiceRequestController extends Controller
 
             'payment_method' => 'required|string',
             'address' => 'required|string',
-        ]);
 
-        // استخراج الإحداثيات من العنوان
-        $location = $this->getLatLongFromAddress($validated['address']);
-        if (!$location) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'فشل في تحديد الموقع من العنوان'
-            ], 422);
-        }
+            'longitude' => 'required|numeric',
+            'latitude' => 'required|numeric',
+        ]);
 
         // رفع الصورة
         $imagePath = null;
@@ -55,14 +47,22 @@ class ServiceRequestController extends Controller
             'time_slot' => $validated['time_slot'],
             'payment_method' => $validated['payment_method'],
             'address' => $validated['address'],
-            'longitude' => $location['lng'],
-            'latitude' => $location['lat'],
+            'longitude' => $validated['longitude'],
+            'latitude' => $validated['latitude'],
         ]);
 
         // إرسال إشعارات للفنيين
         $technicians = Technician::all();
         foreach ($technicians as $technician) {
             $technician->notify(new ServiceRequestNotification($serviceRequest));
+            // إرسال إشعار FCM (Push Notification)
+            if ($technician->fcm_token) {
+                FcmHelper::sendNotification(
+                    $technician->fcm_token,
+                        'طلب خدمة جديد',
+                        'تم نشر طلب خدمة جديد بالقرب منك. تحقق من التفاصيل الآن.'
+                );
+            }
         }
 
         return response()->json([
@@ -116,27 +116,5 @@ class ServiceRequestController extends Controller
     private function generateMapUrl($latitude, $longitude)
     {
         return "https://www.openstreetmap.org/?mlat={$latitude}&mlon={$longitude}#map=18/{$latitude}/{$longitude}";
-    }
-
-    private function getLatLongFromAddress($address)
-    {
-        $url = "https://nominatim.openstreetmap.org/search";
-
-        $response = Http::withHeaders([
-            'User-Agent' => 'LaravelApp/1.0'
-        ])->get($url, [
-            'q' => $address,
-            'format' => 'json',
-            'limit' => 1
-        ]);
-
-        if ($response->successful() && isset($response[0])) {
-            return [
-                'lat' => $response[0]['lat'],
-                'lng' => $response[0]['lon']
-            ];
-        }
-
-        return null;
     }
 }
