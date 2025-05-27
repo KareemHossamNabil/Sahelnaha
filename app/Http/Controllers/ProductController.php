@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-
-    //  Retrived All Products
     public function index()
     {
         $products = Product::with('reviews')->get();
@@ -22,7 +20,6 @@ class ProductController extends Controller
         ]);
     }
 
-    //  by ID
     public function show($id)
     {
         $product = Product::with('reviews')->find($id);
@@ -40,8 +37,6 @@ class ProductController extends Controller
         ]);
     }
 
-
-    // Filteration By Category
     public function filterByCategory($category)
     {
 
@@ -55,7 +50,6 @@ class ProductController extends Controller
             ], 404);
         }
 
-        // إرجاع المنتجات مع التقييمات
         return response()->json([
             'status' => 200,
             'msg'    => 'Products retrieved successfully',
