@@ -7,6 +7,7 @@ use App\Models\ServiceRequest;
 use App\Models\Technician;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\ServiceRequestNotification;
+use App\Helpers\FcmHelper;
 
 class ServiceRequestController extends Controller
 {
@@ -51,7 +52,7 @@ class ServiceRequestController extends Controller
             'latitude' => $validated['latitude'],
         ]);
 
-        // إرسال إشعارات للفنيين
+
         $technicians = Technician::all();
         foreach ($technicians as $technician) {
             $technician->notify(new ServiceRequestNotification($serviceRequest));
@@ -59,8 +60,8 @@ class ServiceRequestController extends Controller
             if ($technician->fcm_token) {
                 FcmHelper::sendNotification(
                     $technician->fcm_token,
-                        'طلب خدمة جديد',
-                        'تم نشر طلب خدمة جديد بالقرب منك. تحقق من التفاصيل الآن.'
+                    'طلب خدمة جديد',
+                    'تم نشر طلب خدمة جديد بالقرب منك. تحقق من التفاصيل الآن.'
                 );
             }
         }
