@@ -44,10 +44,9 @@ class ProductController extends Controller
     // Filteration By Category
     public function filterByCategory($category)
     {
-        // جلب المنتجات بناءً على الفئة مع التقييمات
+
         $products = Product::with('reviews')->where('category', $category)->get();
 
-        // التحقق من وجود منتجات
         if ($products->isEmpty()) {
             return response()->json([
                 'status' => 404,

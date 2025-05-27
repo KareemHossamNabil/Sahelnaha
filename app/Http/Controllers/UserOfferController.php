@@ -161,7 +161,7 @@ class UserOfferController extends Controller
             DB::commit();
 
             return response()->json([
-                'status' => 'success',
+                'status' => 200,
                 'message' => 'تم قبول العرض بنجاح',
                 'data' => [
                     'offer' => $offer,
@@ -205,19 +205,7 @@ class UserOfferController extends Controller
                     'message' => 'حدث خطأ في قاعدة البيانات أثناء معالجة الطلب'
                 ], 500);
             }
-            // Check for notification errors
-            // if ($e instanceof \Illuminate\Notifications\NotificationException) {
-            //     Log::warning('Notification error while accepting offer: ' . $e->getMessage(), [
-            //         'offer_id' => $offerId,
-            //         'user_id' => $user->id ?? null,
-            //         'exception' => get_class($e),
-            //         'trace' => $e->getTraceAsString()
-            //     ]);
-            //     return response()->json([
-            //         'status' => 'error',
-            //         'message' => 'تم قبول العرض ولكن حدث خطأ في إرسال الإشعارات'
-            //     ], 500);
-            // }
+
 
             return response()->json([
                 'status' => 'error',
@@ -443,6 +431,85 @@ class UserOfferController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('FCM Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get user offers by status from the URL
+     *
+     * @param Request $request
+     * @param string $status
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getOffersByStatus(Request $request, $status)
+    {
+        Log::info('getOffersByStatus called', ['status' => $status]);
+
+        $user = Auth::user();
+        if (!$user) {
+            Log::error('User not authenticated');
+            return response()->json(['message' => 'يجب أن تكون مسجلاً كمستخدم لرؤية العروض'], 403);
+        }
+
+        Log::info('User authenticated', ['user_id' => $user->id]);
+
+        $validator = Validator::make(['status' => $status], [
+            'status' => 'required|in:pending,accepted,rejected,completed,all',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            // Get user's requests
+            $serviceRequests = ServiceRequest::where('user_id', $user->id)->pluck('id');
+            $orderServices = OrderService::where('user_id', $user->id)->pluck('id');
+
+            // Query for offers
+            $offersQuery = TechnicianOffer::with(['technician', 'serviceRequest', 'orderService'])
+                ->where(function ($query) use ($serviceRequests, $orderServices) {
+                    $query->whereIn('service_request_id', $serviceRequests)
+                        ->orWhereIn('order_service_id', $orderServices);
+                });
+
+            // Filter by status
+            if ($status !== 'all') {
+                $offersQuery->where('status', $status);
+            }
+
+            $offers = $offersQuery->get()
+                ->map(function ($offer) {
+                    $requestType = $offer->request_type;
+                    $requestDetails = $requestType === 'service_request'
+                        ? $offer->serviceRequest
+                        : $offer->orderService;
+
+                    return [
+                        'id' => $offer->id,
+                        'technician' => $offer->technician,
+                        'description' => $offer->description,
+                        'min_price' => $offer->min_price,
+                        'max_price' => $offer->max_price,
+                        'currency' => $offer->currency,
+                        'status' => $offer->status,
+                        'created_at' => $offer->created_at,
+                        'updated_at' => $offer->updated_at,
+                        'request_type' => $requestType,
+                        'request_details' => $requestDetails,
+                    ];
+                });
+
+            return response()->json([
+                'status' => true,
+                'offers' => $offers
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching user offers: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'حدث خطأ أثناء جلب العروض'
+            ], 500);
         }
     }
 }

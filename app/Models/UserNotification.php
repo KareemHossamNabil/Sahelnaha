@@ -4,17 +4,31 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Notification extends Model
+class UserNotification extends Model
 {
-    protected $fillable = ['user_id', 'title', 'body', 'data', 'read'];
+    protected $table = 'user_notifications';
+
+    protected $fillable = [
+        'user_id',
+        'title',
+        'body',
+        'type',
+        'data',
+        'read_at'
+    ];
 
     protected $casts = [
         'data' => 'array',
-        'read' => 'boolean',
+        'read_at' => 'datetime'
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function isRead()
+    {
+        return !is_null($this->read_at);
     }
 }

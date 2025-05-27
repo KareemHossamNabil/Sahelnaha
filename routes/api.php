@@ -98,7 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Notifications
     Route::get('/technician/my-notifications', [TechnicianAuthController::class, 'getNotifications']);
-    Route::get('/user/my-notifications', [UserNotificationController::class, 'index']);
+    // Route::get('/user/my-notifications', [UserNotificationController::class, 'index']);
 
     // Technician Offers
     Route::prefix('technician')->group(function () {
@@ -130,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/offers/{offerId}/accept', [UserOfferController::class, 'acceptOffer']);
         Route::post('/offers/{offerId}/reject', [UserOfferController::class, 'rejectOffer']);
         Route::post('/offers/{offerId}/complete', [UserOfferController::class, 'confirmCompletion']);
+        Route::get('/offers/{status}', [UserOfferController::class, 'getOffersByStatus']);
     });
 
     // Offer Actions

@@ -11,11 +11,13 @@ use App\Models\Notification;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\NewTechnicianOfferNotification;
 use App\Notifications\OfferUpdatedNotification;
 use App\Notifications\OfferDeletedNotification;
 use App\Events\TechnicianOfferEvent;
+use App\Services\FirebaseNotificationService;
 
 class TechnicianOfferController extends Controller
 {
@@ -59,76 +61,99 @@ class TechnicianOfferController extends Controller
 
     public function store(Request $request)
     {
-        $technicianId = $this->getTechnicianId();
-        if (is_a($technicianId, \Illuminate\Http\JsonResponse::class)) return $technicianId;
+        try {
+            $technicianId = $this->getTechnicianId();
+            if (is_a($technicianId, \Illuminate\Http\JsonResponse::class)) return $technicianId;
 
-        $validator = Validator::make($request->all(), [
-            'service_request_id' => 'required_without:order_service_id|exists:service_requests,id',
-            'order_service_id' => 'required_without:service_request_id|exists:order_services,id',
-            'description' => 'required|string|min:10',
-            'min_price' => 'required|numeric|min:0',
-            'max_price' => 'required|numeric|gt:min_price',
-        ]);
+            $validator = Validator::make($request->all(), [
+                'service_request_id' => 'required_without:order_service_id|exists:service_requests,id',
+                'order_service_id' => 'required_without:service_request_id|exists:order_services,id',
+                'description' => 'required|string|min:10',
+                'min_price' => 'required|numeric|min:0',
+                'max_price' => 'required|numeric|gt:min_price',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $requestData = $this->getRequestObject($request);
+            if (!$requestData) {
+                return response()->json(['message' => 'لم يتم العثور على الطلب المحدد'], 404);
+            }
+
+            $serviceObject = $requestData['object'];
+            $requestType = $requestData['type'];
+            $idField = $requestData['id_field'];
+            $idValue = $requestData['id_value'];
+
+            if (property_exists($serviceObject, 'status') && $serviceObject->status !== 'pending') {
+                return response()->json(['message' => 'هذا الطلب لم يعد يقبل العروض'], 400);
+            }
+
+            $existingOffer = TechnicianOffer::where($idField, $idValue)
+                ->where('technician_id', $technicianId)
+                ->first();
+
+            if ($existingOffer) {
+                return response()->json(['message' => 'لقد قمت بالفعل بتقديم عرض لهذا الطلب'], 400);
+            }
+
+            $offer = TechnicianOffer::create([
+                $idField => $idValue,
+                'technician_id' => $technicianId,
+                'description' => $request->description,
+                'min_price' => $request->min_price,
+                'max_price' => $request->max_price,
+                'currency' => 'جنيه مصري',
+                'status' => 'pending',
+                'request_type' => $requestType,
+            ]);
+
+            $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($technicianId);
+            $user = User::findOrFail($serviceObject->user_id);
+
+            if ($user->is_notify && $user->fcm_token) {
+                $title = 'عرض فني جديد';
+                $body = $technician->first_name . ' ' . $technician->last_name . ' قدم عرضًا جديدًا لطلبك';
+                $type = 'new_offer';
+                $data = [
+                    'offer_id' => (string) $offer->id,
+                    'service_request_id' => (string) $serviceObject->id,
+                    'type' => 'new_offer',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                ];
+
+                Log::info('Sending notification with data:', [
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'type' => $type,
+                    'data' => $data
+                ]);
+
+                (new FirebaseNotificationService)->sendNotification(
+                    $user->fcm_token,
+                    $title,
+                    $body,
+                    $type,
+                    $data,
+                    $user->id
+                );
+            }
+
+            return response()->json([
+                'status' => 201,
+                'message' => 'تم إرسال عرضك المقدم والاشعار إلى المستخدم بنجاح وفي انتظار القبول',
+                'data' => $offer,
+                'technician' => $technician,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'حدث خطأ أثناء معالجة طلبك',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $requestData = $this->getRequestObject($request);
-        if (!$requestData) {
-            return response()->json(['message' => 'لم يتم العثور على الطلب المحدد'], 404);
-        }
-
-        $serviceObject = $requestData['object'];
-        $requestType = $requestData['type'];
-        $idField = $requestData['id_field'];
-        $idValue = $requestData['id_value'];
-
-        if (property_exists($serviceObject, 'status') && $serviceObject->status !== 'pending') {
-            return response()->json(['message' => 'هذا الطلب لم يعد يقبل العروض'], 400);
-        }
-
-        $existingOffer = TechnicianOffer::where($idField, $idValue)
-            ->where('technician_id', $technicianId)
-            ->first();
-
-        if ($existingOffer) {
-            return response()->json(['message' => 'لقد قمت بالفعل بتقديم عرض لهذا الطلب'], 400);
-        }
-
-        $offer = TechnicianOffer::create([
-            $idField => $idValue,
-            'technician_id' => $technicianId,
-            'description' => $request->description,
-            'min_price' => $request->min_price,
-            'max_price' => $request->max_price,
-            'currency' => 'جنيه مصري',
-            'status' => 'pending',
-            'request_type' => $requestType,
-        ]);
-
-        $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($technicianId);
-        $user = User::findOrFail($serviceObject->user_id);
-
-        // التعديل الرئيسي هنا ليتناسب مع NewTechnicianOfferNotification
-        $user->notify(new NewTechnicianOfferNotification(
-            $offer->id,                     // offerId
-            $serviceObject->id,             // serviceRequestId
-            $request->description,          // description
-            $technician->id,                // technicianId
-            $technician->full_name,         // technicianName
-            $request->min_price,            // minPrice
-            $request->max_price             // maxPrice
-        ));
-
-        event(new TechnicianOfferEvent('created', $offer, $technician, $serviceObject, $requestType));
-
-        return response()->json([
-            'status' => 201,
-            'message' => 'تم إرسال عرضك المقدم إلى المستخدم بنجاح وفي انتظار القبول',
-            'data' => $offer,
-            'technician' => $technician,
-        ], 201);
     }
 
     public function update(Request $request, $id)
@@ -258,5 +283,69 @@ class TechnicianOfferController extends Controller
             'status' => true,
             'offers' => $offers
         ]);
+    }
+
+    /**
+     * Get offers by specific status for authenticated technician
+     *
+     * @param Request $request
+     * @param string $status
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getOffersByStatus(Request $request, $status)
+    {
+        Log::info('getOffersByStatus called', ['status' => $status]);
+
+        $technicianId = $this->getTechnicianId();
+        if (is_a($technicianId, \Illuminate\Http\JsonResponse::class)) return $technicianId;
+
+        $validator = Validator::make(['status' => $status], [
+            'status' => 'required|in:pending,accepted,rejected,completed,all',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $offersQuery = TechnicianOffer::with(['serviceRequest.user', 'orderService.user'])
+                ->where('technician_id', $technicianId);
+
+            if ($status !== 'all') {
+                $offersQuery->where('status', $status);
+            }
+
+            $offers = $offersQuery->get()
+                ->map(function ($offer) {
+                    $requestType = $offer->request_type;
+                    $relatedRequest = $requestType === 'service_request'
+                        ? $offer->serviceRequest
+                        : $offer->orderService;
+
+                    return [
+                        'id' => $offer->id,
+                        'description' => $offer->description,
+                        'min_price' => $offer->min_price,
+                        'max_price' => $offer->max_price,
+                        'currency' => $offer->currency,
+                        'status' => $offer->status,
+                        'created_at' => $offer->created_at,
+                        'updated_at' => $offer->updated_at,
+                        'request_type' => $requestType,
+                        'request_details' => $relatedRequest,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 200,
+                'offers' => $offers
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching technician offers: ' . $e->getMessage());
+            return response()->json([
+                'status' => 404,
+                'message' => 'حدث خطأ أثناء جلب العروض'
+            ], 500);
+        }
     }
 }
