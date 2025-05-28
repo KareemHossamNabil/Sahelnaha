@@ -20,6 +20,7 @@ use App\Http\Controllers\TechnicianWorkScheduleController;
 use App\Http\Controllers\OrderServiceController;
 use App\Http\Controllers\UserOfferController;
 use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\RatingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -138,4 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{offer}/reject', [UserOfferController::class, 'rejectOffer']);
         Route::post('/{offer}/complete', [UserOfferController::class, 'confirmCompletion']);
     });
+
+    // Rating Routes
+    Route::post('/ratings', [RatingController::class, 'store']);
 });
