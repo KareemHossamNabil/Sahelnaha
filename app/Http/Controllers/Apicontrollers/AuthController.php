@@ -11,43 +11,73 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
+
 
 class AuthController extends Controller
 {
     //  تسجيل المستخدم وإرسال OTP للتفعيل
     public function signup(Request $request)
     {
-        $request->validate([
-            "first_name" => "required",
-            "last_name" => "required",
-            "email" => "required|email|unique:users",
-            "password" => "required|min:8",
-            "address" => "required",
-            "phone" => "required"
-        ]);
+        try {
+            // إجراء التحقق من الـ validation
+            $validatedData = $request->validate([
+                "first_name" => "required",
+                "last_name" => "required",
+                "email" => "required|email|unique:users,email",
+                "password" => "required|min:8",
+                "address" => "required",
+                "phone" => "required|unique:users,phone"
+            ], [
+                "first_name.required" => "First name is required.",
+                "last_name.required" => "Last name is required.",
+                "email.required" => "Email is required.",
+                "email.email" => "Email must be a valid email address.",
+                "email.unique" => "This email is already registered.",
+                "password.required" => "Password is required.",
+                "password.min" => "Password must be at least 8 characters.",
+                "address.required" => "Address is required.",
+                "phone.required" => "Phone number is required.",
+                "phone.unique" => "This phone number is already registered.",
+            ]);
 
-        $otp = str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'address' => $request->address,
-            'phone' => $request->phone,
-            'register_otp' => $otp,
-            'is_verified' => 0,
-        ]);
+            // إنشاء الـ OTP
+            $otp = str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
 
-        // حفظ الـ OTP في الكاش مع البريد الإلكتروني
-        Cache::put('register_otp_' . $otp, $request->email, now()->addMinutes(10));
+            // إنشاء المستخدم
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+                'address' => $request->address,
+                'phone' => $request->phone,
+                'register_otp' => $otp,
+                'is_verified' => 0,
+            ]);
 
-        Mail::to($request->email)->send(new OtpMail($otp));
+            // تخزين OTP في الـ Cache
+            Cache::put('register_otp_' . $otp, $request->email, now()->addMinutes(10));
 
-        return response()->json([
-            "success" => true,
-            "message" => "User created successfully. Please verify OTP."
-        ], 201);
+            // إرسال OTP عبر البريد
+            Mail::to($request->email)->send(new OtpMail($otp));
+
+            // إرجاع استجابة نجاح
+            return response()->json([
+                "success" => true,
+                "message" => "User created successfully. Please verify OTP."
+            ], 201);
+        } catch (ValidationException $e) {
+            // في حالة حدوث خطأ في الـ Validation، إرجاع الرسائل بتنسيق JSON
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors(),
+            ], 422); // رمز الحالة 422 يعني "Unprocessable Entity"
+        }
     }
+
+
 
     //  تأكيد OTP عند التسجيل
     public function verifyOtp(Request $request)
@@ -93,7 +123,7 @@ class AuthController extends Controller
         if (!Auth::attempt($credentials)) {
             return response()->json(["success" => false, "message" => "Invalid credentials."], 401);
         }
-
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if (!$user->is_verified) {

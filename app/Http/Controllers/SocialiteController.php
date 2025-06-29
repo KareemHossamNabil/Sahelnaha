@@ -9,9 +9,14 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\Controller;
 
 class SocialiteController extends Controller
 {
+    // public function __construct()
+    // {
+    //     $this->middleware('web'); // أضف هذا السطر
+    // }
     public function redirectToGoogle()
     {
         return Socialite::driver('google')->redirect();
@@ -35,15 +40,27 @@ class SocialiteController extends Controller
                     'user' => $finduser,
                 ]);
             } else {
+                // تقسيم الاسم الكامل إلى جزأين
+                $nameParts = explode(' ', $user->name, 2); // الحد الأقصى لجزئين
+                $firstName = $nameParts[0];
+                $lastName = $nameParts[1] ?? ''; // إذا لم يوجد اسم أخير
+
                 $newuser = User::create([
-                    'name' => $user->name, //work from here 
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                     'email' => $user->email,
                     'social_id' => $user->id,
                     'social_type' => 'google',
-                    'password' => Hash::make('my-google'), // كلمة سر افتراضية
+                    'password' => Hash::make('my-google'),
+                    // إضافة الحقول الإضافية مع قيم افتراضية
+                    'address' => '',
+                    'phone' => '',
+                    'register_otp' => null,
+                    'reset_otp' => null,
+                    'is_verified' => 1 // تم التحقق عبر السوشيال
                 ]);
-                FacadesAuth::login($newuser);
 
+                FacadesAuth::login($newuser);
                 return response()->json([
                     'success' => true,
                     'user' => $newuser,
@@ -67,15 +84,25 @@ class SocialiteController extends Controller
                     'user' => $finduser,
                 ]);
             } else {
+                $nameParts = explode(' ', $user->name, 2);
+                $firstName = $nameParts[0];
+                $lastName = $nameParts[1] ?? '';
+
                 $newuser = User::create([
-                    'name' => $user->name,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                     'email' => $user->email,
                     'social_id' => $user->id,
                     'social_type' => 'facebook',
-                    'password' => Hash::make('my-facebook'), // كلمة سر افتراضية
+                    'password' => Hash::make('my-facebook'),
+                    'address' => '',
+                    'phone' => '',
+                    'register_otp' => null,
+                    'reset_otp' => null,
+                    'is_verified' => 1
                 ]);
-                FacadesAuth::login($newuser);
 
+                FacadesAuth::login($newuser);
                 return response()->json([
                     'success' => true,
                     'user' => $newuser,

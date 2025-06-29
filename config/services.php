@@ -47,8 +47,18 @@ return [
     'facebook' => [
         'client_id' => env('FACEBOOK_CLIENT_ID'),
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
-        'redirect' => env('FACEBOOK_REDIRECT_URI'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI', 'https://sahelnaha.systems/auth/facebook/callback'),
+    ],
+    'technician_google' => [
+        'client_id' => env('TECHNICIAN_GOOGLE_CLIENT_ID'),
+        'client_secret' => env('TECHNICIAN_GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('TECHNICIAN_GOOGLE_REDIRECT_URI'),
     ],
 
+    'technician_facebook' => [
+        'client_id' => env('TECHNICIAN_FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('TECHNICIAN_FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('TECHNICIAN_FACEBOOK_REDIRECT_URI'),
+    ],
 
 ];

@@ -47,6 +47,10 @@ return [
         ],
 
         'technician' => [ // إضافة الحارس للفنيين
+            'driver' => 'session',
+            'provider' => 'technicians',
+        ],
+        'technician-api' => [ // أضف هذا الحارس الجديد
             'driver' => 'sanctum',
             'provider' => 'technicians',
         ],
@@ -73,7 +77,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => App\Models\User::class,
         ],
 
         'technicians' => [
@@ -81,10 +85,7 @@ return [
             'model' => App\Models\Technician::class,
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+
     ],
 
     /*

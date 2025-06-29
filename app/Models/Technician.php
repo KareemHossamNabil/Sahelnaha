@@ -30,11 +30,14 @@ class Technician extends Authenticatable
         'experience_text',
         'work_images',
         'qr_code',
+        'social_id',
+        'social_type',
     ];
 
     protected $hidden = [
         'password',
         'register_otp',
         'reset_otp',
+        'social_id',
     ];
 }

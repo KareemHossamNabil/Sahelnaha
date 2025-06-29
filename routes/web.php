@@ -1,8 +1,36 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SocialiteController;
+use App\Http\Controllers\TechnicianSocialiteController;
+
+Route::get('/auth/google/redirect', [SocialiteController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback']);
+
+Route::get('/auth/facebook/redirect', [SocialiteController::class, 'redirectToFacebook']);
+Route::get('/auth/facebook/callback', [SocialiteController::class, 'handleFacebookCallback']);
+
+// مسارات السوشيال للفنيين
+Route::prefix('api/technician')->group(function () {
+    Route::get('/auth/google/redirect', [TechnicianSocialiteController::class, 'redirectToGoogle']);
+    Route::get('/auth/google/callback', [TechnicianSocialiteController::class, 'handleGoogleCallback']);
+
+    Route::get('/auth/facebook/redirect', [TechnicianSocialiteController::class, 'redirectToFacebook']);
+    Route::get('/auth/facebook/callback', [TechnicianSocialiteController::class, 'handleFacebookCallback']);
+});
+
+Route::get('/debug-routes', function () {
+    $routes = collect(Route::getRoutes())->map(function ($route) {
+        return [
+            'uri' => $route->uri,
+            'action' => $route->action['controller'] ?? null,
+            'name' => $route->action['as'] ?? null,
+        ];
+    });
+
+    return response()->json($routes);
+});
 
 Route::get('/', function () {
     return view('welcome');
 });
-// dd(env('GOOGLE_CLIENT_ID'), env('GOOGLE_CLIENT_SECRET'), env('GOOGLE_REDIRECT_URL'));

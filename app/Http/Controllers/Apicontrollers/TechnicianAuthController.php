@@ -206,31 +206,74 @@ class TechnicianAuthController extends Controller
 
         return response()->json(["success" => true, "message" => "Reset OTP resent."]);
     }
+
     public function verifyIdentity(Request $request)
     {
-        $request->validate([
+        // تحقق يدوي من البيانات للتحكم الكامل في الرسائل
+        $validator = Validator::make($request->all(), [
             'technician_id' => 'required|exists:technicians,id',
-            'image' => 'required|image'
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120' // 5MB كحد أقصى
+        ], [
+            'technician_id.exists' => 'الفني المحدد غير موجود في النظام',
+            'image.image' => 'الملف المرفوع يجب أن يكون صورة',
+            'image.mimes' => 'يجب أن تكون الصورة من نوع: jpeg, png, jpg',
+            'image.max' => 'حجم الصورة يجب ألا يتجاوز 5 ميجابايت'
         ]);
 
-        $image = $request->file('image');
-        $imagePath = $image->store('identity_verifications', 'public');
-
-        // Call Flask API
-        $flaskUrl = 'http://127.0.0.1:5000/api/verify-id';
-        $response = Http::attach('image', file_get_contents($image), $image->getClientOriginalName())
-            ->post($flaskUrl);
-
-        if ($response->successful() && $response['verified']) {
-            $technician = Technician::find($request->technician_id);
-            $technician->identity_image = $imagePath;
-            $technician->is_verified_identity = 1;
-            $technician->save();
-
-            return response()->json(["success" => true, "message" => "Identity verified successfully."]);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'فشل التحقق',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        return response()->json(["success" => false, "message" => "Identity verification failed."], 422);
+        // الاتصال بـ Flask API مباشرة دون حفظ الصورة أولاً
+        $image = $request->file('image');
+        $flaskUrl = 'https://ai.sahelnaha.systems/id-verification/';
+
+        try {
+            $response = Http::attach(
+                'file',
+                file_get_contents($image->getRealPath()),
+                $image->getClientOriginalName()
+            )->timeout(30) // زيادة المهلة لـ 30 ثانية
+                ->post($flaskUrl, [
+                    'id_text' => $request->technician_id
+                ]);
+
+            $responseData = $response->json();
+
+            // معالجة الرد من Flask
+            if ($response->successful() && $responseData['status'] === "تم التحقق") {
+                // حفظ الصورة فقط عند النجاح
+                $imagePath = $image->store('public/identity_verifications');
+                $fileName = basename($imagePath);
+
+                $technician = Technician::find($request->technician_id);
+                $technician->identity_image = $fileName;
+                $technician->is_verified_identity = 1;
+                $technician->save();
+
+                return response()->json([
+                    "success" => true,
+                    "message" => "تم التحقق من الهوية بنجاح"
+                ]);
+            }
+
+            // معالجة رفض التحقق
+            $errorMessage = $responseData['status'] ?? "فشل التحقق من الهوية";
+            return response()->json([
+                "success" => false,
+                "message" => $errorMessage
+            ], 422);
+        } catch (\Exception $e) {
+            // معالجة الأخطاء العامة
+            return response()->json([
+                "success" => false,
+                "message" => "حدث خطأ أثناء معالجة الطلب: " . $e->getMessage()
+            ], 500);
+        }
     }
     public function updateExperience(Request $request)
     {

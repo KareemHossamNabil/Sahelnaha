@@ -14,6 +14,8 @@ use App\Http\Controllers\ApiControllers\TechnicianAuthController;
 use App\Http\Controllers\TechnicianSupportController;
 use App\Http\Controllers\TechnicianMotivationController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReviewController;
 
 
 // ✅ Routes غير محمية
@@ -32,14 +34,6 @@ Route::post('/resend-reset-otp', [AuthController::class, 'resendResetOtp']);
 
 
 
-//Route::get('/auth/google/redirect', [SocialiteController::class, 'redirectToGoogle']);
-//Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback']);
-
-//Route::get('auth/facebook', [SocialiteController::class, 'redirectToFacebook']);
-//Route::get('auth/facebook/callback', [SocialiteController::class, 'handleFacebookCallback']);
-
-
-
 Route::post('/reviews', [UsersReviewController::class, 'store']); // API لحفظ الريفيو
 Route::get('/reviews', [UsersReviewController::class, 'index']); // API 
 
@@ -54,10 +48,21 @@ Route::get('/offers', [OfferController::class, 'index']);
 Route::get('/offers/{id}', [OfferController::class, 'show']);
 
 
+// Route::get('auth/google/redirect', [SocialiteController::class, 'redirectToGoogle']);
+// Route::get('auth/google/callback', [SocialiteController::class, 'handleGoogleCallback']);
+// Route::get('auth/facebook', [SocialiteController::class, 'redirectToFacebook']);
+// Route::get('auth/facebook/callback', [SocialiteController::class, 'handleFacebookCallback']);
+// Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
+// Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
-Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
-Route::get('auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
+// أضف middleware الويب للسوشيال فقط
+// Route::middleware('web')->group(function () {
+//     Route::get('/auth/google/redirect', [SocialiteController::class, 'redirectToGoogle']);
+//     Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback']);
 
+//     Route::get('/auth/facebook/redirect', [SocialiteController::class, 'redirectToFacebook']);
+//     Route::get('/auth/facebook/callback', [SocialiteController::class, 'handleFacebookCallback']);
+// });
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -106,3 +111,13 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/scan/{id}', [AttendanceController::class, 'scanQr'])->name('scan.qr');
 
 Route::get('/technician/qr/{id}', [TechnicianAuthController::class, 'showQr'])->middleware('auth:sanctum');
+
+
+Route::post('/verify-id', [TechnicianAuthController::class, 'verifyIdentity']);
+
+
+
+// Products
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
+Route::get('/products/category/{category}', [ProductController::class, 'filterByCategory']);
