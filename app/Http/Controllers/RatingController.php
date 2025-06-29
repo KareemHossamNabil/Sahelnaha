@@ -28,7 +28,7 @@ class RatingController extends Controller
                 'rating' => 'required|integer|min:1|max:5',
             ]);
 
-            // Check if the offer exists and is completed
+
             $offer = TechnicianOffer::findOrFail($validated['offer_id']);
 
             if ($offer->status !== 'completed') {
@@ -38,7 +38,7 @@ class RatingController extends Controller
                 ], 400);
             }
 
-            // Check if rating already exists for this offer
+
             $existingRating = Rating::where('offer_id', $validated['offer_id'])->first();
             if ($existingRating) {
                 return response()->json([
@@ -47,14 +47,14 @@ class RatingController extends Controller
                 ], 400);
             }
 
-            // Handle image upload if present
+
             $imagePath = null;
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $imagePath = $image->store('ratings/invoices', 'public');
             }
 
-            // Create the rating
+
             $rating = Rating::create([
                 'offer_id' => $validated['offer_id'],
                 'technician_id' => $validated['technician_id'],
@@ -106,7 +106,6 @@ class RatingController extends Controller
         $averageRating = Rating::where('technician_id', $technicianId)
             ->avg('rating');
 
-        // Update the technician's average rating in the technicians table
         \App\Models\Technician::where('id', $technicianId)
             ->update(['average_rating' => round($averageRating, 1)]);
     }

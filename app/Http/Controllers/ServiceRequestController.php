@@ -7,7 +7,7 @@ use App\Models\ServiceRequest;
 use App\Models\Technician;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\ServiceRequestNotification;
-use App\Helpers\FcmHelper;
+use App\services\FirebaseNotificationService;
 
 class ServiceRequestController extends Controller
 {
@@ -18,25 +18,21 @@ class ServiceRequestController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'is_urgent' => 'nullable|boolean',
-
             'date' => 'required|date',
             'day' => 'required|string',
             'time_slot' => 'required|string',
-
             'payment_method' => 'required|string',
             'address' => 'required|string',
-
             'longitude' => 'required|numeric',
             'latitude' => 'required|numeric',
         ]);
 
-        // رفع الصورة
+
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('service-requests', 'public');
         }
 
-        // إنشاء الطلب
         $serviceRequest = ServiceRequest::create([
             'user_id' => Auth::id(),
             'service_name' => $validated['service_name'],
@@ -58,10 +54,11 @@ class ServiceRequestController extends Controller
             $technician->notify(new ServiceRequestNotification($serviceRequest));
             // إرسال إشعار FCM (Push Notification)
             if ($technician->fcm_token) {
-                FcmHelper::sendNotification(
+                (new FirebaseNotificationService())->sendNotification(
                     $technician->fcm_token,
                     'طلب خدمة جديد',
-                    'تم نشر طلب خدمة جديد بالقرب منك. تحقق من التفاصيل الآن.'
+                    'تم نشر طلب خدمة جديد بالقرب منك. تحقق من التفاصيل الآن.',
+                    []
                 );
             }
         }

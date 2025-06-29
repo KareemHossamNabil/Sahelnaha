@@ -61,6 +61,7 @@ class TechnicianOfferController extends Controller
         return null;
     }
 
+    // Post Method : Create a technician offer
     public function store(Request $request)
     {
         try {
@@ -158,6 +159,7 @@ class TechnicianOfferController extends Controller
         }
     }
 
+    // Put Method : Update a technician offer
     public function update(Request $request, $id)
     {
         $technicianId = $this->getTechnicianId();
@@ -213,6 +215,7 @@ class TechnicianOfferController extends Controller
         ], 200);
     }
 
+    // Delete Method : Delete a technician offer
     public function destroy($id)
     {
         $technicianId = $this->getTechnicianId();
@@ -260,6 +263,11 @@ class TechnicianOfferController extends Controller
         }
     }
 
+    /**
+     * Get all offers for the authenticated technician
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getMyOffers()
     {
         $technicianId = $this->getTechnicianId();
@@ -438,31 +446,244 @@ class TechnicianOfferController extends Controller
                 ? $offer->serviceRequest->user
                 : $offer->orderService->user;
 
-            if ($user) {
-                // Create notification
-                $user->notifications()->create([
-                    'title' => 'تم إلغاء العرض',
-                    'body' => 'قام الفني بإلغاء العرض الخاص بك',
+            if ($user && $user->is_notify && $user->fcm_token) {
+                $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($offer->technician_id);
+                $title = 'تم إلغاء العرض';
+                $body = $technician->first_name . ' ' . $technician->last_name . ' قام بإلغاء العرض الخاص بك';
+                $type = 'offer_cancelled';
+                $data = [
+                    'offer_id' => (string) $offer->id,
+                    'technician_id' => (string) $offer->technician_id,
+                    'request_type' => $offer->service_request_id ? 'service_request' : 'order_service',
+                    'request_id' => (string) ($offer->service_request_id ?? $offer->order_service_id),
                     'type' => 'offer_cancelled',
-                    'data' => [
-                        'offer_id' => $offer->id,
-                        'technician_id' => $offer->technician_id,
-                        'request_type' => $offer->service_request_id ? 'service_request' : 'order_service',
-                        'request_id' => $offer->service_request_id ?? $offer->order_service_id
-                    ]
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                ];
+
+                // Store notification in database
+                $user->notifications()->create([
+                    'title' => $title,
+                    'body' => $body,
+                    'type' => $type,
+                    'data' => $data
                 ]);
 
-                // Send push notification if user has FCM token
-                if ($user->fcm_token) {
-                    // You can implement your push notification logic here
-                    // For example, using Firebase Cloud Messaging
-                }
+                Log::info('Sending cancellation notification with data:', [
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'type' => $type,
+                    'data' => $data
+                ]);
+
+                (new FirebaseNotificationService)->sendNotification(
+                    $user->fcm_token,
+                    $title,
+                    $body,
+                    $type,
+                    $data,
+                    $user->id
+                );
             }
         } catch (\Exception $e) {
             Log::error('Error sending cancellation notification: ' . $e->getMessage(), [
                 'offer_id' => $offer->id,
                 'user_id' => $user->id ?? null
             ]);
+        }
+    }
+
+    private function notifyTechnicianAboutOfferStatus($offer, $status)
+    {
+        try {
+            $technician = Technician::findOrFail($offer->technician_id);
+            $user = $offer->service_request_id
+                ? $offer->serviceRequest->user
+                : $offer->orderService->user;
+
+            if ($technician && $technician->is_notify && $technician->fcm_token) {
+                $title = '';
+                $body = '';
+                $type = '';
+
+                switch ($status) {
+                    case 'accepted':
+                        $title = 'تم قبول عرضك';
+                        $body = $user->first_name . ' ' . $user->last_name . ' قام بقبول عرضك';
+                        $type = 'offer_accepted';
+                        break;
+                    case 'rejected':
+                        $title = 'تم رفض عرضك';
+                        $body = $user->first_name . ' ' . $user->last_name . ' قام برفض عرضك';
+                        $type = 'offer_rejected';
+                        break;
+                    case 'cancelled':
+                        $title = 'تم إلغاء العرض';
+                        $body = $user->first_name . ' ' . $user->last_name . ' قام بإلغاء العرض';
+                        $type = 'offer_cancelled';
+                        break;
+                }
+
+                $data = [
+                    'offer_id' => (string) $offer->id,
+                    'user_id' => (string) $user->id,
+                    'request_type' => $offer->service_request_id ? 'service_request' : 'order_service',
+                    'request_id' => (string) ($offer->service_request_id ?? $offer->order_service_id),
+                    'type' => $type,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                ];
+
+                // Store notification in database
+                $technician->notifications()->create([
+                    'title' => $title,
+                    'body' => $body,
+                    'type' => $type,
+                    'data' => $data
+                ]);
+
+                Log::info('Sending offer status notification to technician:', [
+                    'technician_id' => $technician->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'type' => $type,
+                    'data' => $data
+                ]);
+
+                (new FirebaseNotificationService)->sendNotification(
+                    $technician->fcm_token,
+                    $title,
+                    $body,
+                    $type,
+                    $data,
+                    $technician->id
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending offer status notification to technician: ' . $e->getMessage(), [
+                'offer_id' => $offer->id,
+                'technician_id' => $technician->id ?? null
+            ]);
+        }
+    }
+
+    private function notifyUserAboutOfferStatus($offer, $status)
+    {
+        try {
+            $user = $offer->service_request_id
+                ? $offer->serviceRequest->user
+                : $offer->orderService->user;
+
+            if ($user && $user->is_notify && $user->fcm_token) {
+                $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($offer->technician_id);
+                $title = '';
+                $body = '';
+                $type = '';
+
+                switch ($status) {
+                    case 'accepted':
+                        $title = 'تم قبول عرضك';
+                        $body = 'تم قبول عرضك من قبل ' . $technician->first_name . ' ' . $technician->last_name;
+                        $type = 'offer_accepted';
+                        break;
+                    case 'rejected':
+                        $title = 'تم رفض عرضك';
+                        $body = 'تم رفض عرضك من قبل ' . $technician->first_name . ' ' . $technician->last_name;
+                        $type = 'offer_rejected';
+                        break;
+                    case 'cancelled':
+                        $title = 'تم إلغاء العرض';
+                        $body = $technician->first_name . ' ' . $technician->last_name . ' قام بإلغاء العرض';
+                        $type = 'offer_cancelled';
+                        break;
+                }
+
+                $data = [
+                    'offer_id' => (string) $offer->id,
+                    'technician_id' => (string) $offer->technician_id,
+                    'request_type' => $offer->service_request_id ? 'service_request' : 'order_service',
+                    'request_id' => (string) ($offer->service_request_id ?? $offer->order_service_id),
+                    'type' => $type,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                ];
+
+                // Store notification in database
+                $user->notifications()->create([
+                    'title' => $title,
+                    'body' => $body,
+                    'type' => $type,
+                    'data' => $data
+                ]);
+
+                Log::info('Sending offer status notification to user:', [
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'type' => $type,
+                    'data' => $data
+                ]);
+
+                (new FirebaseNotificationService)->sendNotification(
+                    $user->fcm_token,
+                    $title,
+                    $body,
+                    $type,
+                    $data,
+                    $user->id
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending offer status notification to user: ' . $e->getMessage(), [
+                'offer_id' => $offer->id,
+                'user_id' => $user->id ?? null
+            ]);
+        }
+    }
+
+    public function updateOfferStatus(Request $request, $id)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'status' => 'required|in:accepted,rejected,cancelled'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $offer = TechnicianOffer::findOrFail($id);
+            $oldStatus = $offer->status;
+            $newStatus = $request->status;
+
+            // Update offer status
+            $offer->status = $newStatus;
+            $offer->save();
+
+            // Send notifications
+            if ($oldStatus !== $newStatus) {
+                $this->notifyTechnicianAboutOfferStatus($offer, $newStatus);
+                $this->notifyUserAboutOfferStatus($offer, $newStatus);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'تم تحديث حالة العرض بنجاح',
+                'data' => $offer
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'العرض غير موجود'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error updating offer status: ' . $e->getMessage(), [
+                'offer_id' => $id,
+                'status' => $request->status
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'حدث خطأ أثناء تحديث حالة العرض'
+            ], 500);
         }
     }
 

@@ -217,7 +217,13 @@ class OrderServiceController extends Controller
     private function getArabicDayName($dayNumber)
     {
         $days = [
-            'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'
+            'الأحد',
+            'الإثنين',
+            'الثلاثاء',
+            'الأربعاء',
+            'الخميس',
+            'الجمعة',
+            'السبت'
         ];
         return $days[$dayNumber];
     }
