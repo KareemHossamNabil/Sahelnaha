@@ -18,6 +18,8 @@ use App\Notifications\OfferUpdatedNotification;
 use App\Notifications\OfferDeletedNotification;
 use App\Events\TechnicianOfferEvent;
 use App\Services\FirebaseNotificationService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class TechnicianOfferController extends Controller
 {
@@ -345,6 +347,187 @@ class TechnicianOfferController extends Controller
             return response()->json([
                 'status' => 404,
                 'message' => 'حدث خطأ أثناء جلب العروض'
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel an offer by the technician
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cancelOffer($id)
+    {
+        try {
+            $technician = Auth::user();
+
+            // Find the offer and ensure it belongs to the authenticated technician
+            $offer = TechnicianOffer::where('id', $id)
+                ->where('technician_id', $technician->id)
+                ->firstOrFail();
+
+            // Check if the offer can be cancelled (only pending or accepted offers can be cancelled)
+            if (!in_array($offer->status, ['pending', 'accepted'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'لا يمكن إلغاء هذا العرض - الحالة الحالية: ' . $offer->status
+                ], 400);
+            }
+
+            // Start transaction
+            DB::beginTransaction();
+
+            try {
+                // Update offer status
+                $offer->update(['status' => 'cancelled']);
+
+                // If the offer was accepted, update the related request status
+                if ($offer->status === 'accepted') {
+                    if ($offer->service_request_id) {
+                        $offer->serviceRequest->update(['status' => 'pending']);
+                    } else if ($offer->order_service_id) {
+                        $offer->orderService->update(['status' => 'pending']);
+                    }
+                }
+
+                // Send notification to the user
+                $this->notifyUserAboutOfferCancellation($offer);
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'تم إلغاء العرض بنجاح',
+                    'data' => [
+                        'offer' => $offer
+                    ]
+                ]);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'العرض غير موجود'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error cancelling offer: ' . $e->getMessage(), [
+                'offer_id' => $id,
+                'technician_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'حدث خطأ أثناء إلغاء العرض'
+            ], 500);
+        }
+    }
+
+    /**
+     * Notify user about offer cancellation
+     *
+     * @param TechnicianOffer $offer
+     * @return void
+     */
+    private function notifyUserAboutOfferCancellation($offer)
+    {
+        try {
+            $user = $offer->service_request_id
+                ? $offer->serviceRequest->user
+                : $offer->orderService->user;
+
+            if ($user) {
+                // Create notification
+                $user->notifications()->create([
+                    'title' => 'تم إلغاء العرض',
+                    'body' => 'قام الفني بإلغاء العرض الخاص بك',
+                    'type' => 'offer_cancelled',
+                    'data' => [
+                        'offer_id' => $offer->id,
+                        'technician_id' => $offer->technician_id,
+                        'request_type' => $offer->service_request_id ? 'service_request' : 'order_service',
+                        'request_id' => $offer->service_request_id ?? $offer->order_service_id
+                    ]
+                ]);
+
+                // Send push notification if user has FCM token
+                if ($user->fcm_token) {
+                    // You can implement your push notification logic here
+                    // For example, using Firebase Cloud Messaging
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending cancellation notification: ' . $e->getMessage(), [
+                'offer_id' => $offer->id,
+                'user_id' => $user->id ?? null
+            ]);
+        }
+    }
+
+    /**
+     * Get location details for an accepted offer
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getOfferLocation($id)
+    {
+        try {
+            $technician = Auth::user();
+
+            // Find the offer and ensure it belongs to the authenticated technician
+            $offer = TechnicianOffer::where('id', $id)
+                ->where('technician_id', $technician->id)
+                ->where('status', 'accepted')
+                ->firstOrFail();
+
+            // Get the related request (service request or order service)
+            $requestType = $offer->request_type;
+            $relatedRequest = $requestType === 'service_request'
+                ? $offer->serviceRequest
+                : $offer->orderService;
+
+            if (!$relatedRequest) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'لم يتم العثور على تفاصيل الطلب'
+                ], 404);
+            }
+
+            // Get location details
+            $locationDetails = [
+                'longitude' => $relatedRequest->longitude,
+                'latitude' => $relatedRequest->latitude,
+                'location' => $relatedRequest->location,
+                'request_type' => $requestType,
+                'request_id' => $relatedRequest->id,
+                'user' => [
+                    'id' => $relatedRequest->user->id,
+                    'name' => $relatedRequest->user->name,
+                    'phone' => $relatedRequest->user->phone
+                ]
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $locationDetails
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'العرض غير موجود أو لم يتم قبوله'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error retrieving offer location: ' . $e->getMessage(), [
+                'offer_id' => $id,
+                'technician_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'حدث خطأ أثناء جلب تفاصيل الموقع'
             ], 500);
         }
     }

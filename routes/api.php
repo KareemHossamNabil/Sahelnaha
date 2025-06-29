@@ -67,7 +67,7 @@ Route::get('/products/category/{category}', [ProductController::class, 'filterBy
 
 // Service Requests
 Route::get('service-requests', [ServiceRequestController::class, 'index']);
-Route::get('service-request/{id}', [ServiceRequestController::class, 'getServiceRequestById']);
+// Route::get('service-request/{id}', [ServiceRequestController::class, 'getServiceRequestById']);
 
 /*
 |--------------------------------------------------------------------------
@@ -99,7 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Notifications
     Route::get('/technician/my-notifications', [TechnicianAuthController::class, 'getNotifications']);
-    // Route::get('/user/my-notifications', [UserNotificationController::class, 'index']);
+    Route::get('/user/my-notifications', [AuthController::class, 'getNotifications']);
 
     // Technician Offers
     Route::prefix('technician')->group(function () {
@@ -108,6 +108,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/offers/{id}', [TechnicianOfferController::class, 'update']);
         Route::delete('/offers/{id}', [TechnicianOfferController::class, 'destroy']);
         Route::get('/offers/{status}', [TechnicianOfferController::class, 'getOffersByStatus']);
+        Route::post('/offers/{id}/cancel', [TechnicianOfferController::class, 'cancelOffer']);
+        Route::get('/offers/{id}/location', [TechnicianOfferController::class, 'getOfferLocation']);
     });
 
     // Work Schedules
@@ -141,5 +143,5 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Rating Routes
-    Route::post('/ratings', [RatingController::class, 'store']);
+    Route::post('/Service-Rating', [RatingController::class, 'store']);
 });

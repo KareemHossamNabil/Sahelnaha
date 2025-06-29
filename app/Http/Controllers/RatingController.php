@@ -68,7 +68,7 @@ class RatingController extends Controller
             $this->updateTechnicianAverageRating($validated['technician_id']);
 
             return response()->json([
-                'status' => 'success',
+                'status' => 201,
                 'message' => 'تم إضافة التقييم بنجاح',
                 'data' => [
                     'rating' => $rating,
