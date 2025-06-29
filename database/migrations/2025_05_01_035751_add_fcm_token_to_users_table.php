@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('social_id')->nullable(); // لحفظ الـ Social ID
-            $table->string('social_type')->nullable(); // لحفظ نوع الشبكة الاجتماعية (Google, Facebook)
+            $table->string('fcm_token')->nullable();
         });
     }
 
@@ -23,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('social_id');
-            $table->dropColumn('social_type');
+            $table->dropColumn('fcm_token');
         });
     }
 };

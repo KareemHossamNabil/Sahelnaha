@@ -1,5 +1,7 @@
 <?php
 
+use App\Helpers\FcmHelper;
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\TechnicianSocialiteController;
@@ -11,13 +13,13 @@ Route::get('/auth/facebook/redirect', [SocialiteController::class, 'redirectToFa
 Route::get('/auth/facebook/callback', [SocialiteController::class, 'handleFacebookCallback']);
 
 // مسارات السوشيال للفنيين
-Route::prefix('api/technician')->group(function () {
-    Route::get('/auth/google/redirect', [TechnicianSocialiteController::class, 'redirectToGoogle']);
-    Route::get('/auth/google/callback', [TechnicianSocialiteController::class, 'handleGoogleCallback']);
+// Route::prefix('api/technician')->group(function () {
+//     Route::get('/auth/google/redirect', [TechnicianSocialiteController::class, 'redirectToGoogle']);
+//     Route::get('/auth/google/callback', [TechnicianSocialiteController::class, 'handleGoogleCallback']);
 
-    Route::get('/auth/facebook/redirect', [TechnicianSocialiteController::class, 'redirectToFacebook']);
-    Route::get('/auth/facebook/callback', [TechnicianSocialiteController::class, 'handleFacebookCallback']);
-});
+//     Route::get('/auth/facebook/redirect', [TechnicianSocialiteController::class, 'redirectToFacebook']);
+//     Route::get('/auth/facebook/callback', [TechnicianSocialiteController::class, 'handleFacebookCallback']);
+// });
 
 Route::get('/debug-routes', function () {
     $routes = collect(Route::getRoutes())->map(function ($route) {

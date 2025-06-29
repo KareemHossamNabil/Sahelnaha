@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_service', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('service_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
+        Schema::table('technicians', function (Blueprint $table) {
+            $table->decimal('average_rating', 3, 1)->default(0.0)->after('specialty');
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_service');
+        Schema::table('technicians', function (Blueprint $table) {
+            $table->dropColumn('average_rating');
+        });
     }
 };

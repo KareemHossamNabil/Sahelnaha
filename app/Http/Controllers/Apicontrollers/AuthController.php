@@ -265,4 +265,38 @@ class AuthController extends Controller
 
         return response()->json(["success" => true, "message" => "Reset password OTP resent successfully."]);
     }
+
+
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string',
+        ]);
+
+        $request->user()->update([
+            'fcm_token' => $request->fcm_token,
+        ]);
+
+        return response()->json(['message' => 'تم تحديث FCM Token بنجاح']);
+    }
+
+    public function getNotifications()
+    {
+        // الحصول على الفني المتصل
+        $user = Auth::user();  // إذا كنت تستخدم التوثيق مع الفنيين بشكل صحيح، سيكون الـ Auth يجلب الـ Technician المتصل
+
+        // تحقق إذا كان الفني قد قام بتسجيل الدخول
+        if (!$user) {
+            return response()->json([
+                'status' => 401,
+                'message' => 'يرجى تسجيل الدخول أولاً.',
+            ], 401);
+        }
+
+        // إرجاع الإشعارات الخاصة بالفني
+        return response()->json([
+            'status' => 200,
+            'notifications' => $user->notifications,
+        ]);
+    }
 }

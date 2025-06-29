@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Service extends Model
+class Address extends Model
 {
     use HasFactory;
 
@@ -16,10 +15,12 @@ class Service extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'service_name',
-        'category',
-        'description',
-        'image_path',
+        'user_id',
+        'name',
+        'street',
+        'city',
+        'country',
+        'is_default',
     ];
 
     /**
@@ -27,8 +28,15 @@ class Service extends Model
      *
      * @var array<string, string>
      */
+    protected $casts = [
+        'is_default' => 'boolean',
+    ];
 
     /**
-     * Get the problem types for the service.
+     * Get the user that owns the address.
      */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

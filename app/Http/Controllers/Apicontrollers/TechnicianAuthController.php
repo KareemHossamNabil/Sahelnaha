@@ -14,6 +14,7 @@ use App\Mail\OtpMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+// use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
 use SimpleQRCode;
 
@@ -336,5 +337,27 @@ class TechnicianAuthController extends Controller
         $qrCode = QrCode::size(300)->generate(route('scan.qr', $technician->id));  // بتولد الرابط الخاص بالمسار
 
         return response($qrCode)->header('Content-Type', 'image/svg+xml');
+        // $qrCode = QrCode::size(300)->generate(route('scan.qr', $technician->id));  // بتولد الرابط الخاص بالمسار
+
+        // return response($qrCode)->header('Content-Type', 'image/svg+xml');
+    }
+    public function getNotifications()
+    {
+        // الحصول على الفني المتصل
+        $technician = Auth::user();  // إذا كنت تستخدم التوثيق مع الفنيين بشكل صحيح، سيكون الـ Auth يجلب الـ Technician المتصل
+
+        // تحقق إذا كان الفني قد قام بتسجيل الدخول
+        if (!$technician) {
+            return response()->json([
+                'status' => 401,
+                'message' => 'يرجى تسجيل الدخول أولاً.',
+            ], 401);
+        }
+
+        // إرجاع الإشعارات الخاصة بالفني
+        return response()->json([
+            'status' => 200,
+            'notifications' => $technician->notifications,
+        ]);
     }
 }

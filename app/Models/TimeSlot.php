@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Service extends Model
+class TimeSlot extends Model
 {
     use HasFactory;
 
@@ -16,10 +15,11 @@ class Service extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'service_name',
-        'category',
-        'description',
-        'image_path',
+        'name',
+        'name_en',
+        'start_time',
+        'end_time',
+        'is_active',
     ];
 
     /**
@@ -27,8 +27,7 @@ class Service extends Model
      *
      * @var array<string, string>
      */
-
-    /**
-     * Get the problem types for the service.
-     */
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }
