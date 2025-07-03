@@ -24,8 +24,8 @@ class Payment extends Model
         'transaction_id',
         'paymob_order_id',
         'paymob_transaction_id',
-        'card_details',
         'wallet_number',
+        'card_details',
         'payment_response'
     ];
 
@@ -44,7 +44,7 @@ class Payment extends Model
         'payment_status' => 'pending',
     ];
 
-
+    
     // العلاقة مع المستخدم
     public function user()
     {
@@ -55,7 +55,7 @@ class Payment extends Model
         return $this->belongsTo(Order::class);
     }
 
-    // نطاقات الاستعلام (Query Scopes)
+        // نطاقات الاستعلام (Query Scopes)
     public function scopeSuccessful($query)
     {
         return $query->where('payment_status', 'paid');

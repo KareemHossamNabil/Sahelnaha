@@ -116,6 +116,17 @@ class TechnicianOfferController extends Controller
             $technician = Technician::select('id', 'first_name', 'last_name')->findOrFail($technicianId);
             $user = User::findOrFail($serviceObject->user_id);
 
+            // Store notification in the database using Laravel's notification system
+            $user->notify(new NewTechnicianOfferNotification(
+                $offer->id,
+                $serviceObject->id,
+                $offer->description,
+                $technician->id,
+                $technician->first_name . ' ' . $technician->last_name,
+                $offer->min_price,
+                $offer->max_price
+            ));
+
             if ($user->is_notify && $user->fcm_token) {
                 $title = 'عرض فني جديد';
                 $body = $technician->first_name . ' ' . $technician->last_name . ' قدم عرضًا جديدًا لطلبك';
@@ -158,7 +169,6 @@ class TechnicianOfferController extends Controller
             ], 500);
         }
     }
-
     // Put Method : Update a technician offer
     public function update(Request $request, $id)
     {

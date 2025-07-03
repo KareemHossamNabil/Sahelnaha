@@ -9,10 +9,7 @@ class Attendance extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'technician_id',
-        'scanned_at',
-    ];
+    protected $fillable = ['technician_id', 'user_id', 'scanned_at'];
 
     public function technician()
     {
@@ -21,5 +18,9 @@ class Attendance extends Model
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

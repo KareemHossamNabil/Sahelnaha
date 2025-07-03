@@ -5,6 +5,7 @@ use App\Helpers\FcmHelper;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\TechnicianSocialiteController;
+use App\Http\Controllers\StaticPageController;
 
 Route::get('/auth/google/redirect', [SocialiteController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback']);
@@ -36,3 +37,10 @@ Route::get('/debug-routes', function () {
 Route::get('/', function () {
     return view('welcome');
 });
+
+
+
+// الصفحات الثابتة
+Route::get('/privacy-policy', [StaticPageController::class, 'privacyPolicy'])->name('privacy');
+Route::get('/data-deletion', [StaticPageController::class, 'dataDeletion'])->name('data-deletion');
+Route::get('/terms-of-service', [StaticPageController::class, 'termsOfService'])->name('terms');

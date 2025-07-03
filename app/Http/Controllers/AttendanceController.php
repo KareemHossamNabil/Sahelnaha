@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Technician;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
 {
@@ -19,20 +21,38 @@ class AttendanceController extends Controller
         return response()->json($attendances);
     }
 
-    public function scanQr($id, Request $request)
+
+
+    public function scanQr(Request $request, $technicianId)
     {
-        $technician = Technician::find($id);
-        if (!$technician) {
-            return response()->json(['message' => 'Technician not found'], 404);
+        // الحصول على المستخدم المسجل دخوله (الذي قام بالمسح)
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'يجب تسجيل الدخول أولاً'
+            ], 401);
         }
 
-        // هنا انت مش محتاج latitude و longitude زي ما قلت
-        // تسجيل الحضور للفني مباشرة بدون latitude و longitude
-        $attendance = Attendance::create([
-            'technician_id' => $technician->id,
-            'scanned_at' => now(),
+        $technician = Technician::find($technicianId);
+
+        if (!$technician) {
+            return response()->json([
+                'message' => 'الفني غير موجود'
+            ], 404);
+        }
+
+        // تسجيل الحضور مع هوية المستخدم
+        Attendance::create([
+            'technician_id' => $technicianId,
+            'user_id' => $user->id,
+            'scanned_at' => now()
         ]);
 
-        return response()->json(['message' => 'Attendance recorded', 'data' => $attendance]);
+        return response()->json([
+            'message' => 'تم تسجيل الحضور بنجاح',
+            'technician' => $technician,
+            'scanned_by' => $user->name
+        ]);
     }
 }

@@ -27,14 +27,4 @@ class ServiceRequest extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    public function schedule()
-    {
-        return $this->hasOne(ServiceRequestSchedule::class);
-    }
-
-    public function address()
-    {
-        return $this->hasOne(ServiceRequestAddress::class);
-    }
 }

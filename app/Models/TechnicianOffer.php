@@ -9,6 +9,8 @@ class TechnicianOffer extends Model
 {
     use HasFactory;
 
+    const STATUS_COMPLETED = 'Completed';
+
     protected $fillable = [
         'technician_id',
         'service_request_id',

@@ -28,22 +28,30 @@ class RatingController extends Controller
                 'rating' => 'required|integer|min:1|max:5',
             ]);
 
-
             $offer = TechnicianOffer::findOrFail($validated['offer_id']);
 
-            if ($offer->status !== 'completed') {
+            if ($offer->status !== TechnicianOffer::STATUS_COMPLETED) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'يمكن التقييم فقط للعروض المكتملة'
                 ], 400);
             }
 
+            // التحقق من وجود تقييم لنفس العرض ونفس المستخدم
+            $existingRating = Rating::where('offer_id', $validated['offer_id'])
+                ->where('user_id', Auth::id()) // أضفنا شرط المستخدم
+                ->first();
 
-            $existingRating = Rating::where('offer_id', $validated['offer_id'])->first();
             if ($existingRating) {
+                // إضافة تفاصيل للمساعدة في التشخيص
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'تم التقييم مسبقاً لهذا العرض'
+                    'message' => 'تم التقييم مسبقاً لهذا العرض',
+                    'details' => [
+                        'user_id' => Auth::id(),
+                        'offer_id' => $validated['offer_id'],
+                        'existing_rating_id' => $existingRating->id
+                    ]
                 ], 400);
             }
 

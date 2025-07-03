@@ -8,6 +8,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Storage;
 
 class Technician extends Authenticatable
 {
@@ -32,6 +33,9 @@ class Technician extends Authenticatable
         'qr_code',
         'social_id',
         'social_type',
+        'specialty',
+        'profile_image',
+        'years_of_experience'
     ];
 
     protected $hidden = [
@@ -40,4 +44,18 @@ class Technician extends Authenticatable
         'reset_otp',
         'social_id',
     ];
+
+    // public function getProfileImageUrlAttribute()
+    // {
+    //     return $this->profile_image
+    //         ? Storage::url($this->profile_image)
+    //         : null;
+    // }
+    public function getProfileImageUrlAttribute()
+    {
+        if (!$this->profile_image) return null;
+
+        // إرجاع رابط كامل مع التحقق من البادئة
+        return asset($this->profile_image);
+    }
 }

@@ -3,10 +3,13 @@
 namespace App\Notifications;
 
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\DatabaseMessage;
 
 class NewTechnicianOfferNotification extends Notification
 {
+    protected $title = 'عرض جديد';
+    protected $type = 'new_offer';
+    protected $body;
+
     public function __construct(
         public $offerId,
         public $serviceRequestId,
@@ -14,8 +17,10 @@ class NewTechnicianOfferNotification extends Notification
         public $technicianId,
         public $technicianName,
         public $minPrice,
-        public $maxPrice,
-    ) {}
+        public $maxPrice
+    ) {
+        $this->body = "قام {$this->technicianName} بتقديم عرض على طلبك";
+    }
 
     public function via($notifiable)
     {
@@ -25,13 +30,13 @@ class NewTechnicianOfferNotification extends Notification
     public function toDatabase($notifiable)
     {
         return [
+            'user_id' => $notifiable->id,
             'title' => 'عرض جديد',
-            'body' => sprintf('قام %s بتقديم عرض على طلبك', $this->technicianName),
-            'type' => 'new_offer',
+            'body' => 'هناك عرض جديد لطلبك',
+            'type' => $this->type,
             'data' => [
                 'offer_id' => $this->offerId,
                 'service_request_id' => $this->serviceRequestId,
-                'order_service_id' => null,
                 'description' => $this->description,
                 'technician_id' => $this->technicianId,
                 'technician_name' => $this->technicianName,
@@ -39,7 +44,8 @@ class NewTechnicianOfferNotification extends Notification
                 'max_price' => $this->maxPrice,
                 'currency' => 'جنيه مصري',
                 'created_at' => now()->toDateTimeString(),
-            ]
+            ],
+            'read_at' => null
         ];
     }
 }

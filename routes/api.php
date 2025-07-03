@@ -24,6 +24,8 @@ use App\Http\Controllers\OrderServiceController;
 use App\Http\Controllers\UserOfferController;
 use App\Http\Controllers\UserNotificationController;
 use App\Http\Controllers\RatingController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TechnicianWalletController;
 
 /*
 |--------------------------------------------------------------------------
@@ -206,7 +208,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendances/{technician_id}', [AttendanceController::class, 'index']);
 });
 
-Route::get('/scan/{id}', [AttendanceController::class, 'scanQr'])->name('scan.qr');
+Route::middleware('auth:sanctum')->post('/scan-qr/{technicianId}', [AttendanceController::class, 'scanQr'])->name('scan-qr');
 
 Route::get('/technician/qr/{id}', [TechnicianAuthController::class, 'showQr'])->middleware('auth:sanctum');
 
@@ -219,3 +221,26 @@ Route::post('/verify-id', [TechnicianAuthController::class, 'verifyIdentity']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/products/category/{category}', [ProductController::class, 'filterByCategory']);
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/technician/profile', [TechnicianAuthController::class, 'updateProfile']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/user/profile', [AuthController::class, 'updateProfile']);
+});
+
+
+Route::post('/paymob/payment', [PaymentController::class, 'createPaymobPayment'])->name('paymob.payment');
+Route::post('/paymob/callback', [PaymentController::class, 'handlePaymobCallback'])->name('paymob.callback');
+Route::get('/paymob/status', [PaymentController::class, 'checkPaymentStatus']);
+
+Route::prefix('test/technician-wallet')->group(function (): void {
+    Route::post('create', [TechnicianWalletController::class, 'createWallet']);
+    Route::post('deposit', [TechnicianWalletController::class, 'deposit']);
+    Route::post('withdraw/request', [TechnicianWalletController::class, 'requestWithdrawal']);
+    Route::post('withdraw/complete', [TechnicianWalletController::class, 'completeWithdrawal']);
+    Route::get('balance', [TechnicianWalletController::class, 'getBalance']);
+    Route::get('transactions', [TechnicianWalletController::class, 'getTransactions']);
+});

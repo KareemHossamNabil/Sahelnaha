@@ -13,12 +13,12 @@ class TechPayment extends Model
 
     // تأكد من إضافة هذا العمود في الـ fillable
     protected $fillable = [
-        'tech_id',
-        'technician_wallet_id',
-        'amount',
-        'type',
+        'tech_id', 
+        'technician_wallet_id', 
+        'amount', 
+        'type', 
         'status',
-        'description',
+        'description', 
         'metadata',
         'reference', // أضفنا الـ reference هنا
     ];

@@ -13,10 +13,7 @@ use App\Http\Controllers\Controller;
 
 class SocialiteController extends Controller
 {
-    // public function __construct()
-    // {
-    //     $this->middleware('web'); // أضف هذا السطر
-    // }
+
     public function redirectToGoogle()
     {
         return Socialite::driver('google')->redirect();

@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 
 class AuthController extends Controller
@@ -111,10 +113,12 @@ class AuthController extends Controller
     //  تسجيل الدخول
     public function signin(Request $request)
     {
+
         $request->validate([
             'login' => 'required', // يمكن أن يكون email أو phone
             'password' => 'required',
         ]);
+
 
         $fieldType = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
@@ -298,5 +302,78 @@ class AuthController extends Controller
             'status' => 200,
             'notifications' => $user->notifications,
         ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+
+            // القواعد الأساسية للتحقق
+            $validator = Validator::make($request->all(), [
+                'address' => 'sometimes|string|max:255',
+                'phone' => 'sometimes|string|unique:users,phone,' . $user->id,
+                'email' => 'sometimes|email|unique:users,email,' . $user->id,
+                'profile_picture' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ], [
+                'phone.unique' => 'رقم الهاتف مستخدم من قبل',
+                'email.unique' => 'البريد الإلكتروني مستخدم من قبل',
+                'profile_picture.image' => 'يجب أن يكون الملف صورة',
+                'profile_picture.max' => 'يجب ألا يتجاوز حجم الصورة 2MB',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $data = $request->only(['address', 'phone', 'email']);
+            $requiresVerification = false;
+
+            // إذا تم تغيير الإيميل
+            if ($request->has('email') && $request->email !== $user->email) {
+                $otp = str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
+                $data['register_otp'] = $otp;
+                $data['is_verified'] = 0;
+                $requiresVerification = true;
+
+                // إرسال OTP
+                Mail::to($request->email)->send(new OtpMail($otp));
+            }
+
+            // التعامل مع صورة البروفايل
+            if ($request->hasFile('profile_picture')) {
+                // حذف الصورة القديمة إذا كانت موجودة
+                if ($user->profile_picture) {
+                    Storage::disk('public')->delete($user->profile_picture);
+                }
+
+                $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+                $data['profile_picture'] = $path;
+            }
+
+            $user->update($data);
+
+            $response = [
+                'success' => true,
+                'message' => 'تم تحديث الملف الشخصي بنجاح',
+                'user' => $user->fresh()
+            ];
+
+            if ($requiresVerification) {
+                $response['message'] .= ' - يرجى تفعيل الإيميل الجديد باستخدام OTP';
+            }
+
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
+            Log::error('Profile update error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء تحديث الملف الشخصي'
+            ], 500);
+        }
     }
 }

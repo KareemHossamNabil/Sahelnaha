@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
@@ -22,6 +23,7 @@ class User extends Authenticatable
         'phone',
         'register_otp',
         'reset_otp',
+        'profile_picture',
         'is_verified'
     ];
     protected $hidden = [
@@ -39,10 +41,10 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
-    protected function setPasswordAttribute($value)
-    {
-        $this->attributes['password'] = Hash::make($value);
-    }
+    // protected function setPasswordAttribute($value)
+    // {
+    //     $this->attributes['password'] = Hash::make($value);
+    // }
 
     /**
      * Get the user's custom notifications.
@@ -90,5 +92,9 @@ class User extends Authenticatable
     public function notifications()
     {
         return $this->hasMany(UserNotification::class);
+    }
+    public function scannedAttendances()
+    {
+        return $this->hasMany(Attendance::class);
     }
 }

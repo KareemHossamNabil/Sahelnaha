@@ -17,6 +17,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 // use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
 use SimpleQRCode;
+use Illuminate\Support\Facades\Log;
 
 class TechnicianAuthController extends Controller
 {
@@ -31,7 +32,9 @@ class TechnicianAuthController extends Controller
                 "email" => "required|email|unique:technicians,email",
                 "password" => "required|min:8",
                 "address" => "required",
-                "phone" => "required|unique:technicians,phone"
+                "phone" => "required|unique:technicians,phone",
+                "specialty" => "nullable|string|max:255",
+                "years_of_experience" => "nullable|integer|min:0|max:50"
             ]);
         } catch (ValidationException $e) {
             $errors = $e->errors();
@@ -41,18 +44,15 @@ class TechnicianAuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'رقم الهاتف أو البريد الإلكتروني مستخدم من قبل.'
-                ], 409); // Conflict
+                ], 409);
             }
-
-            // لو في أخطاء تانية
             return response()->json([
                 'success' => false,
                 'message' => 'يوجد خطأ في البيانات المدخلة.',
                 'errors' => $errors
-            ], 422); // Unprocessable Entity
+            ], 422);
         }
 
-        // باقي الكود كالمعتاد
         $otp = str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
 
         $technician = Technician::create([
@@ -64,6 +64,8 @@ class TechnicianAuthController extends Controller
             'phone' => $request->phone,
             'register_otp' => $otp,
             'is_verified' => 0,
+            'specialty' => $request->specialty,
+            'years_of_experience' => $request->years_of_experience
         ]);
 
         Cache::put('tech_register_otp_' . $otp, $request->email, now()->addMinutes(10));
@@ -86,12 +88,12 @@ class TechnicianAuthController extends Controller
         $technician->is_verified = 1;
         $technician->register_otp = null;
 
-        // ✅ توليد QR Code
+        //  توليد QR Code
         $qrData = route('scan.qr', ['id' => $technician->id]); // أو استخدم API URL
         $qrImage = QrCode::format('svg')->size(300)->generate($qrData);
         $qrPath = 'qrcodes/tech_' . $technician->id . '.svg';
         Storage::disk('public')->put($qrPath, $qrImage);
-        $technician->qr_code = $qrPath;
+        $technician->qr_code = 'storage/' . $qrPath;
 
         $technician->save();
 
@@ -282,7 +284,7 @@ class TechnicianAuthController extends Controller
             'experience_text' => 'required|string|max:1000',
         ]);
         /** @var \App\Models\Technician $technician */
-        $technician = auth('technician')->user();
+        $technician = auth('sanctum')->user();
         // Get the authenticated technician
 
         // Update the technician's experience text
@@ -303,7 +305,7 @@ class TechnicianAuthController extends Controller
             'work_images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Image validation
         ]);
 
-        $technician = auth('technician')->user();
+        $technician = auth('sanctum')->user();
         // Get the authenticated technician
 
         $imagePaths = [];
@@ -329,18 +331,19 @@ class TechnicianAuthController extends Controller
     public function showQr($id)
     {
         $technician = Technician::find($id);
+
         if (!$technician) {
             return response()->json(['message' => 'Technician not found'], 404);
         }
 
-        // هنا بنولد صورة الـ QR
-        $qrCode = QrCode::size(300)->generate(route('scan.qr', $technician->id));  // بتولد الرابط الخاص بالمسار
+        // استخدم مسار scan-qr المحمي
+        $qrData = route('scan-qr', ['technicianId' => $technician->id]);
+
+        $qrCode = QrCode::size(300)->generate($qrData);
 
         return response($qrCode)->header('Content-Type', 'image/svg+xml');
-        // $qrCode = QrCode::size(300)->generate(route('scan.qr', $technician->id));  // بتولد الرابط الخاص بالمسار
-
-        // return response($qrCode)->header('Content-Type', 'image/svg+xml');
     }
+
     public function getNotifications()
     {
         // الحصول على الفني المتصل
@@ -359,5 +362,107 @@ class TechnicianAuthController extends Controller
             'status' => 200,
             'notifications' => $technician->notifications,
         ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth('sanctum')->user();
+
+        if (!$user || !$user instanceof \App\Models\Technician) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح بالوصول. يرجى تسجيل الدخول كفني.'
+            ], 401);
+        }
+
+        Log::debug('File received', [
+            'has_file' => $request->hasFile('profile_image'),
+            'file_valid' => $request->file('profile_image') ? $request->file('profile_image')->isValid() : false,
+            'file_path' => $request->file('profile_image') ? $request->file('profile_image')->path() : null
+        ]);
+
+        /** @var \App\Models\Technician $technician */
+        $technician = $user;
+
+        $request->validate([
+            "first_name" => "nullable|string|max:255",
+            "last_name" => "nullable|string|max:255",
+            "email" => "nullable|email|unique:technicians,email," . $technician->id,
+            "phone" => "nullable|string|unique:technicians,phone," . $technician->id,
+            "address" => "nullable|string|max:500",
+            "specialty" => "nullable|string|max:255",
+            "years_of_experience" => "nullable|integer|min:0|max:70",
+            "profile_image" => "nullable|image|mimes:jpeg,png,jpg,gif|max:2048"
+        ]);
+
+        $data = $request->only([
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'address',
+            'specialty',
+            'years_of_experience'
+        ]);
+
+        if ($request->hasFile('profile_image') && $request->file('profile_image')->isValid()) {
+
+            if ($technician->profile_image) {
+                $this->deleteProfileImage($technician->profile_image);
+            }
+
+            try {
+                $imagePath = $request->file('profile_image')->store('profile_images', 'public');
+                $data['profile_image'] = 'storage/' . $imagePath;
+                Log::info('Image stored successfully', [
+                    'path' => $imagePath,
+                    'full_path' => storage_path('app/public/' . $imagePath)
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Image storage failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'فشل في حفظ الصورة: ' . $e->getMessage()
+                ], 500);
+            }
+        }
+
+        $technician->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث الملف الشخصي بنجاح',
+            'technician' => $technician->only([
+                'id',
+                'first_name',
+                'last_name',
+                'email',
+                'phone',
+                'address',
+                'specialty',
+                'years_of_experience',
+                'profile_image',
+                'qr_code',
+                'average_rating'
+            ]),
+            'profile_image_url' => $technician->profile_image
+        ]);
+    }
+
+    private function deleteProfileImage($path)
+    {
+        try {
+            $cleanPath = str_replace('storage/', '', $path);
+
+            if (Storage::disk('public')->exists($cleanPath)) {
+                Storage::disk('public')->delete($cleanPath);
+                Log::info('Deleted image', ['path' => $cleanPath]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Image deletion failed: ' . $e->getMessage());
+        }
     }
 }

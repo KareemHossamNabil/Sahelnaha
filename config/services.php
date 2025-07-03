@@ -64,4 +64,15 @@ return [
     'firebase' => [
         'credentials' => storage_path('app/firebase/sahelnaha-notifications-firebase.json'),
     ],
+    'paymob' => [
+        'api_key' => env('PAYMOB_API_KEY'),
+        'base_url' => env('PAYMOB_BASE_URL'),
+        'vodafone_cash_integration_id' => env('PAYMOB_VODAFONE_CASH_INTEGRATION_ID'),
+        'card_payment_integration_id' => env('PAYMOB_CARD_PAYMENT_INTEGRATION_ID'),
+        //'iframe_id' => env('PAYMOB_IFRAME_ID'),
+        'vodafone_cash_iframe_id' => env('PAYMOB_VODAFONE_IFRAME_ID'),
+        'card_iframe_id' => env('PAYMOB_CARD_IFRAME_ID'),
+        'iframe_base_url' => 'https://accept.paymob.com/api/acceptance/iframes/',
+        'hmac_secret' => env('PAYMOB_HMAC_SECRET'),
+    ],
 ];
