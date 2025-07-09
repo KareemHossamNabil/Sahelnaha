@@ -45,12 +45,7 @@ class Technician extends Authenticatable
         'social_id',
     ];
 
-    // public function getProfileImageUrlAttribute()
-    // {
-    //     return $this->profile_image
-    //         ? Storage::url($this->profile_image)
-    //         : null;
-    // }
+
     public function getProfileImageUrlAttribute()
     {
         if (!$this->profile_image) return null;
